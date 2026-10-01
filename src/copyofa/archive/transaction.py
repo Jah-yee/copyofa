@@ -11,6 +11,8 @@ import shutil
 from pathlib import Path
 from typing import Callable
 
+import click
+
 from ..errors import IntegrityFailure
 from ..util import atomic_write_json, fsync_dir, sha256_file, utc_compact, utc_now
 from . import product as product_mod
@@ -18,10 +20,6 @@ from . import product as product_mod
 JOURNAL_VERSION = 1
 STAGING_PREFIX = ".coa-staging-"
 BACKUP_PREFIX = ".coa-backup-"
-
-
-def _say(message: str) -> None:
-    print(message, flush=True)
 
 
 def checksum_only_verifier(staging: Path, holon: str, medium: str | None) -> list:
@@ -83,7 +81,7 @@ class Transaction:
         if problems:
             shutil.rmtree(self.staging, ignore_errors=True)
             raise IntegrityFailure("staged set failed verification: " + "; ".join(str(p) for p in problems))
-        _say("staged")
+        click.echo("staged")
         new_product = json.loads((self.staging / "product.json").read_text(encoding="utf-8"))
         self.crash_hook("journal")
         created_dirs = []
@@ -137,8 +135,8 @@ class Transaction:
         }
         self.backup.mkdir()
         atomic_write_json(journal, doc)
-        _say("journal written")
-        _say("installing")
+        click.echo("journal written")
+        click.echo("installing")
         _forward(pd, journal, doc, self.crash_hook)
 
 
@@ -196,11 +194,11 @@ def _forward(pd: Path, journal: Path, doc: dict, hook: Callable[[str], None]) ->
     if problems:
         raise IntegrityFailure("new set failed verification in place (journal kept): "
                                + "; ".join(str(p) for p in problems))
-    _say("verified in place")
+    click.echo("verified in place")
     hook("commit")
     journal.unlink()
     fsync_dir(journal.parent)
-    _say("committed")
+    click.echo("committed")
     hook("cleanup")
     shutil.rmtree(pd / doc["backup_dir"], ignore_errors=True)
     shutil.rmtree(pd / doc["staging_dir"], ignore_errors=True)
@@ -266,7 +264,7 @@ def recover(pd: Path, work_root: Path | None = None) -> list[str]:
         actions += [f"recovered: removed leftover scratch {name}" for name in remove_stale_scratch(work_root, pd.name)]
     if not pd.exists():
         for action in actions:
-            _say(action)
+            click.echo(action)
         return actions
     referenced = set()
     for journal in journals(pd):
@@ -297,5 +295,5 @@ def recover(pd: Path, work_root: Path | None = None) -> list[str]:
             path.rmdir()
             actions.append(f"recovered: removed empty directory {path.name}/")
     for action in actions:
-        _say(action)
+        click.echo(action)
     return actions

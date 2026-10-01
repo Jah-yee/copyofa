@@ -3,6 +3,8 @@
 import shutil
 from pathlib import Path
 
+import click
+
 from ..archive import analysis
 from ..errors import (
     EXIT_ACCEPTED,
@@ -123,9 +125,9 @@ def report(run, derived: dict) -> list[Issue]:
     accepted = {a["code"] for a in run.state["acceptances"]}
     for issue in issues:
         if issue.severity == "blocking" and issue.code in accepted and issue.acceptable:
-            print(f"ACCEPTED {issue.code}: {issue.what}")
+            click.echo(f"ACCEPTED {issue.code}: {issue.what}")
         else:
-            print(render(issue))
+            click.echo(render(issue))
     return issues
 
 
@@ -147,7 +149,7 @@ def verify_analyse_publish(run) -> int:
         state["phase"] = "blocked"
         save_state(run.paths, state)
         blocking = open_blocking(issues, state["acceptances"])
-        print(f"{len(blocking)} blocking issue(s) open for {run.image}")
+        click.echo(f"{len(blocking)} blocking issue(s) open for {run.image}")
         return EXIT_FAIL
     return publish(run, derived, result)
 
@@ -200,7 +202,7 @@ def publish(run, derived: dict, result: str) -> int:
                     "the product manifest holds the one declared media list",
                     [f"coa amend {run.holon} --media-list {','.join(declared)} --reason TEXT",
                      f"coa discard {run.holon} {run.medium} --yes"], False, {})
-                print(render(issue))
+                click.echo(render(issue))
                 state["issues"].append(issue.as_dict() | {"accepted": False})
                 save_state(run.paths, state)
                 return EXIT_FAIL
@@ -226,8 +228,8 @@ def publish(run, derived: dict, result: str) -> int:
         Transaction(product_dir, "publish", run.holon, str(run.medium), cfg=cfg).run(build)
         state["phase"] = "published"
         save_state(run.paths, state)
-        print(product_mod.completeness_line(new_product))
+        click.echo(product_mod.completeness_line(new_product))
     make_tree_writable(run.paths.root)
     shutil.rmtree(run.paths.root)
-    print(f"published {run.image} ({result}) at {utc_now()}")
+    click.echo(f"published {run.image} ({result}) at {utc_now()}")
     return EXIT_PASS if result == PASS else EXIT_ACCEPTED if result == ACCEPTED else EXIT_FAIL

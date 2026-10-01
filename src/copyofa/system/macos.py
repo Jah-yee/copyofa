@@ -7,12 +7,13 @@ import fcntl
 import os
 import plistlib
 import re
-import sys
 import threading
 import xml.etree.ElementTree as ET
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable
+
+import click
 
 from ..errors import EnvironmentFailure
 from .procs import run_capture
@@ -340,7 +341,7 @@ class MountGuard:
             return None
         bsd = (desc or {}).get("DAMediaBSDName") or "an unidentified disk"
         self.refused.append(str(bsd))
-        print(f"coa: refused mount of {bsd}", file=sys.stderr, flush=True)
+        click.echo(f"coa: refused mount of {bsd}", err=True)
         dissenter = DA.DADissenterCreate(None, DA.kDAReturnNotPermitted, "coa controls this drive")
         # DiskArbitration releases the returned dissenter; PyObjC also releases its own reference when the
         # Python wrapper dies, so hand DA an extra retain (without it the process crashes, SIGTRAP).

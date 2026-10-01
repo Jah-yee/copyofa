@@ -5,6 +5,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+import click
+
 from ..errors import IntegrityFailure
 from ..util import sha256_file
 from . import metadata
@@ -337,14 +339,14 @@ def verify_command(cfg, holon_text: str, medium_text: str | None = None, *, deep
                 if only and medium != only:
                     continue
                 if entry["status"] != "archived":
-                    print(f"{holon} {medium}: {entry['status']}")
+                    click.echo(f"{holon} {medium}: {entry['status']}")
                     continue
                 mdir = product_mod.medium_dir(pd, doc, medium)
                 found = fast_verify(mdir, holon, medium)
                 if repair and found and not any(p.kind == "uncommitted" for p in found):
                     try:
                         fixed = repair_medium(cfg, pd, doc, holon, medium)
-                        print(f"{holon} {medium}: repaired {', '.join(fixed) or 'checksum file'}")
+                        click.echo(f"{holon} {medium}: repaired {', '.join(fixed) or 'checksum file'}")
                         doc = product_mod.read_product(pd)
                         mdir = product_mod.medium_dir(pd, doc, medium)
                         found = fast_verify(mdir, holon, medium)
@@ -358,13 +360,13 @@ def verify_command(cfg, holon_text: str, medium_text: str | None = None, *, deep
                     if meta.get("partial"):
                         partial = f" partial ({meta['partial']['prefix']})"
                 status = "OK" if not found else "PROBLEMS"
-                print(f"{holon} {medium}: {status}{' (deep)' if deep and not found else ''}{partial}")
+                click.echo(f"{holon} {medium}: {status}{' (deep)' if deep and not found else ''}{partial}")
                 for problem in found:
-                    print(f"  {problem}")
+                    click.echo(f"  {problem}")
                 problems += found
-            print(product_mod.completeness_line(doc))
+            click.echo(product_mod.completeness_line(doc))
         for problem in [p for p in problems if p.where == str(pd)]:
-            print(f"  {problem}")
+            click.echo(f"  {problem}")
     if any(p.kind == "uncommitted" for p in problems):
         return EXIT_UNCOMMITTED
     if problems:

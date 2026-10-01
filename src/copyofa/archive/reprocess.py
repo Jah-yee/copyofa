@@ -4,6 +4,8 @@ import copy
 import json
 import shutil
 
+import click
+
 from .. import __version__
 from ..acquisition.workstate import scratch_root
 from ..errors import IntegrityFailure, UsageError
@@ -96,12 +98,12 @@ def reprocess(cfg, holon_text: str, medium_text: str, reason: str, *, redundancy
             Transaction(pd, "reseal", holon, medium, cfg=cfg).run(build)
         finally:
             shutil.rmtree(scratch, ignore_errors=True)
-    print(f"resealed {image}: {len(changes)} change(s)")
+    click.echo(f"resealed {image}: {len(changes)} change(s)")
     for change in changes:
-        print(f"  changed {change['field']}")
+        click.echo(f"  changed {change['field']}")
     issues = [Issue.from_dict(i) for i in new["issues"]]
     blocking = open_blocking(issues, new["accepted_issues"])
     if blocking:
-        print(f"note: {len(blocking)} blocking issue(s) are not accepted under the current rules: "
-              f"{', '.join(i.code for i in blocking)} (the recorded outcome is unchanged)")
+        click.echo(f"note: {len(blocking)} blocking issue(s) are not accepted under the current rules: "
+                   f"{', '.join(i.code for i in blocking)} (the recorded outcome is unchanged)")
     return 0

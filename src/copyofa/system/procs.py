@@ -4,9 +4,10 @@ import os
 import shlex
 import signal
 import subprocess
-import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+import click
 
 from ..util import utc_now
 
@@ -48,8 +49,7 @@ def run_recorded(argv: list[str], record_path: Path, *, cwd: Path | None = None,
             record.write(chunk)
             record.flush()  # a killed coa still leaves everything read so far in the record
             if echo:
-                sys.stdout.buffer.write(chunk)
-                sys.stdout.buffer.flush()
+                click.echo(chunk, nl=False)
         while True:
             try:
                 exit_code = proc.wait()

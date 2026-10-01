@@ -4,9 +4,12 @@ staged and resumable acquisition."""
 import contextlib
 import json
 import shutil
+import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+
+import click
 
 from .. import config as config_mod
 from .. import vocabulary
@@ -230,7 +233,7 @@ def select_drive(cfg: Config, drive_name: str | None, wait: float) -> Selected:
         if time.monotonic() >= deadline:
             raise MediumRejected("no medium found in any configured drive", code="no-medium")
         if not announced:
-            print(f"waiting up to {int(wait)} s for a medium in {', '.join(d.name for d in drives)} …", flush=True)
+            click.echo(f"waiting up to {int(wait)} s for a medium in {', '.join(d.name for d in drives)} …")
             announced = True
         time.sleep(2)
 
@@ -380,7 +383,7 @@ def first_identification(run: Run, selected: Selected, drive_test: dict, drive_t
         ))
     for mount in mounts:
         if mount.read_only:
-            print(f"{mount.device} is mounted read-only on {mount.mountpoint}; redumper will unmount it")
+            click.echo(f"{mount.device} is mounted read-only on {mount.mountpoint}; redumper will unmount it")
     if descriptor.family == "unknown":
         raise MediumRejected(f"unreadable or unsupported medium ({descriptor.media_type})", code="unreadable-medium")
     if descriptor.family not in drive.media:
@@ -502,7 +505,7 @@ def stop_on_pre_dump_issues(run: Run) -> None:
         run.state["phase"] = "blocked"
         run.save()
         for issue in blocking:
-            print(render(issue))
+            click.echo(render(issue))
         raise Stop(EXIT_FAIL)
 
 
@@ -557,7 +560,7 @@ def run_stage(run: Run, command: str, label: str | None, options: list[str], res
         drive_bsd=run.location.bsd_name, options=options,
     )
     record = paths.stage_record(nn, command)
-    print(f"--- stage {nn:02d}: {command}{f' ({label})' if label else ''}: {' '.join(argv)}", flush=True)
+    click.echo(f"--- stage {nn:02d}: {command}{f' ({label})' if label else ''}: {' '.join(argv)}")
     before = previous_counts(state)
     result = run_recorded(argv, record, cwd=paths.dump)
     lines = console.clean(record.read_bytes())
@@ -610,7 +613,7 @@ def run_stage(run: Run, command: str, label: str | None, options: list[str], res
         state["phase"] = "blocked"
         run.save()
         for issue in hard:
-            print(render(issue))
+            click.echo(render(issue))
         raise Stop(EXIT_FAIL)
     run.save()
     return entry
@@ -691,7 +694,7 @@ def run_acquisition(run: Run) -> None:
         else:
             state["skipped_stages"].append({"command": stage["command"], "label": stage.get("label"),
                                             "reason": "no SCSI or C2 errors remaining"})
-            print(f"--- skipping {stage['command']} ({stage.get('label')}): no SCSI or C2 errors remaining")
+            click.echo(f"--- skipping {stage['command']} ({stage.get('label')}): no SCSI or C2 errors remaining")
         state["plan_index"] += 1
         run.save()
     finish_acquisition(run)
@@ -835,12 +838,12 @@ def accept(cfg: Config, holon_text: str, medium_text: str, code: str, reason: st
             state["force_split"] = True
             state["verification_needed"] = True
         save_state(run.paths, state)
-        print(f"accepted {code} for {run.image}")
-        print(f"rerun: coa archive {run.holon} {run.medium}")
+        click.echo(f"accepted {code} for {run.image}")
+        click.echo(f"rerun: coa archive {run.holon} {run.medium}")
         return 0
 
 
-def discard(cfg: Config, holon_text: str, medium_text: str) -> int:
+def discard(cfg: Config, holon_text: str, medium_text: str, *, yes: bool) -> int:
     run = open_run(cfg, holon_text, medium_text)
     if not run.paths.root.exists():
         raise UsageError(f"no work directory for {run.image}")
@@ -848,9 +851,18 @@ def discard(cfg: Config, holon_text: str, medium_text: str) -> int:
         _lock_work(run)
         if run.state.get("phase") == "publishing":
             raise UsageError(f"{run.image} is being published: run coa recover {run.holon} first")
+        if not yes:
+            if sys.stdin is None or not sys.stdin.isatty():
+                raise UsageError(f"discard of {run.image} needs --yes when stdin is not a terminal")
+            try:
+                confirmed = click.confirm(f"Delete the work directory {run.paths.root}?")
+            except click.Abort:  # Ctrl-C / Ctrl-D at the prompt
+                confirmed = False
+            if not confirmed:
+                raise UsageError(f"discard of {run.image} cancelled; nothing deleted")
         make_tree_writable(run.paths.root)
         shutil.rmtree(run.paths.root)
-    print(f"discarded {run.paths.root}")
+    click.echo(f"discarded {run.paths.root}")
     return 0
 
 
@@ -897,6 +909,6 @@ def drive_test(cfg: Config, drive_name: str | None = None, wait: float = 300) ->
             "plextor_leadin": leadin,
         })
         ok = result.exit_code == 0 and (loc.vendor != "PLEXTOR" or leadin == "yes")
-        print(f"drive::test {'passed' if ok else 'FAILED'} (exit {result.exit_code}, PLEXTOR lead-in: {leadin})")
+        click.echo(f"drive::test {'passed' if ok else 'FAILED'} (exit {result.exit_code}, PLEXTOR lead-in: {leadin})")
         return 0 if ok else 22
 

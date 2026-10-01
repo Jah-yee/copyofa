@@ -3,6 +3,8 @@
 import os
 import shutil
 
+import click
+
 from ..redumper import console
 from ..redumper.commands import build_argv
 from ..system.procs import run_recorded
@@ -31,7 +33,7 @@ def run_verification(run) -> None:
         for command, options in (("split", split_options), ("hash", []), ("info", [])):
             argv = build_argv(run.redumper, command, image_path=vdir, image_name=run.image, options=options)
             record_path = paths.stage_record(stage_nn, command)
-            print(f"--- stage {stage_nn:02d}: {command}: {' '.join(argv)}", flush=True)
+            click.echo(f"--- stage {stage_nn:02d}: {command}: {' '.join(argv)}")
             result = run_recorded(argv, record_path, cwd=vdir)
             state["stages"].append({
                 "nn": stage_nn,

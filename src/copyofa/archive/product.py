@@ -4,6 +4,8 @@ import copy
 import json
 from pathlib import Path
 
+import click
+
 from .. import vocabulary
 from ..errors import IntegrityFailure, UsageError
 from ..ids import parse_medium_id, validate_media_list
@@ -135,7 +137,7 @@ def amend(cfg, holon_text: str, media_list: str, reason: str) -> int:
             marker = product_marker(cfg.work_root, holon)
             marker.parent.mkdir(parents=True, exist_ok=True)
             atomic_write_json(marker, {"verify_required_since": utc_now()})
-            print(f"layout changed: run coa verify {holon} before archiving further media")
-    print(f"media list of {holon}: {', '.join(e['medium_id'] for e in new['media'])}")
-    print(completeness_line(new))
+            click.echo(f"layout changed: run coa verify {holon} before archiving further media")
+    click.echo(f"media list of {holon}: {', '.join(e['medium_id'] for e in new['media'])}")
+    click.echo(completeness_line(new))
     return 0

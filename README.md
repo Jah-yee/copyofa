@@ -43,7 +43,7 @@ stages are repeated under a new stage number. Once acquisition is complete the d
 | `coa archive H M [--media-list L] [--drive N] [--wait S] [--redundancy on\|off --redundancy-reason T]` | acquire, verify, publish (resumable) |
 | `coa refine H M --retries N [--speed X] [--refine-subchannel]` | another refine pass after acquisition, then a new verification |
 | `coa accept H M CODE --reason T` | accept an open acceptable blocking issue |
-| `coa discard H M --yes` | delete the work directory |
+| `coa discard H M [--yes]` | delete the work directory (asks for confirmation on a terminal unless `--yes`) |
 | `coa drive-test [--drive N]` | run and cache `redumper drive::test` |
 | `coa status [H [M]]` | work in progress, product media table, completeness |
 | `coa verify H [M] [--deep] [--repair]` | fast or deep verification; PAR2 repair through a reseal |
