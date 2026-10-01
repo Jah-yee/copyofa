@@ -3,11 +3,13 @@
 import copy
 import json
 import shutil
+from pathlib import Path
 
 import click
 
 from .. import __version__
 from ..acquisition.workstate import scratch_root
+from ..config import Config
 from ..errors import IntegrityFailure, UsageError
 from ..ids import normalize_holon_id, parse_medium_id
 from ..issues import Issue, open_blocking
@@ -20,8 +22,15 @@ from .transaction import Transaction, recover
 from .verify import LOCK, fast_verify, medium_doc
 
 
-def reprocess(cfg, holon_text: str, medium_text: str, reason: str, *, redundancy: str | None = None,
-              redundancy_reason: str | None = None) -> int:
+def reprocess(
+    cfg: Config,
+    holon_text: str,
+    medium_text: str,
+    reason: str,
+    *,
+    redundancy: str | None = None,
+    redundancy_reason: str | None = None,
+) -> int:
     holon = normalize_holon_id(holon_text)
     medium = str(parse_medium_id(medium_text))
     if not reason or not reason.strip():
@@ -40,55 +49,76 @@ def reprocess(cfg, holon_text: str, medium_text: str, reason: str, *, redundancy
         mdir = product_mod.medium_dir(pd, product, medium)
         problems = fast_verify(mdir, holon, medium)
         if problems:
-            raise IntegrityFailure(f"{holon} {medium} is damaged ({'; '.join(map(str, problems))}): "
-                                   f"run coa verify {holon} {medium} --repair")
+            raise IntegrityFailure(
+                f"{holon} {medium} is damaged ({'; '.join(map(str, problems))}): "
+                f"run coa verify {holon} {medium} --repair"
+            )
         old = medium_doc(mdir, holon, medium)
         image = f"{holon}-{medium}"
         scratch = scratch_root(cfg.work_root) / f"reprocess-{image}-{utc_compact()}"
         scratch.mkdir()
         try:
-            raw = {}
+            raw: dict[str, Path] = {}
             for f in old["raw_files"]:
                 target = scratch / f["name"]
                 size, digest = encoding.decode_to(mdir / f["stored_as"], target)
                 if (size, digest) != (f["size"], f["sha256"]):
-                    raise IntegrityFailure(f"{f['stored_as']} does not rebuild {f['name']} bit-exactly")
+                    raise IntegrityFailure(
+                        f"{f['stored_as']} does not rebuild {f['name']} bit-exactly"
+                    )
                 raw[f["name"]] = target
-            derived = analysis.derive(holon, medium, raw, metadata.recorded_inputs(old),
-                                      Catalog.load(cfg.user_messages_path))
+            derived = analysis.derive(
+                holon,
+                medium,
+                raw,
+                metadata.recorded_inputs(old),
+                Catalog.load(cfg.user_messages_path),
+            )
             new = copy.deepcopy(old)
             changes = []
             for key in analysis.DERIVED_KEYS:
-                if json.dumps(derived[key], sort_keys=True) != json.dumps(old[key], sort_keys=True):
+                if json.dumps(derived[key], sort_keys=True) != json.dumps(
+                    old[key], sort_keys=True
+                ):
                     changes.append({"field": f"/{key}", "previous": old[key]})
                     new[key] = derived[key]
             if redundancy is not None:
                 enabled = redundancy == "on"
-                state = {"default_enabled": old["redundancy"]["default_enabled"],
-                         "default_reason": old["redundancy"]["default_reason"],
-                         "override": {"value": enabled, "reason": redundancy_reason}}
+                state = {
+                    "default_enabled": old["redundancy"]["default_enabled"],
+                    "default_reason": old["redundancy"]["default_reason"],
+                    "override": {"value": enabled, "reason": redundancy_reason},
+                }
                 payload = [f["stored_as"] for f in new["raw_files"]]
-                new["redundancy"] = metadata.redundancy_doc(cfg, state, holon, medium, payload)
+                new["redundancy"] = metadata.redundancy_doc(
+                    cfg, state, holon, medium, payload
+                )
                 if new["redundancy"] != old["redundancy"]:
-                    changes.append({"field": "/redundancy", "previous": old["redundancy"]})
+                    changes.append(
+                        {"field": "/redundancy", "previous": old["redundancy"]}
+                    )
             new["format_version"] = metadata.FORMAT_VERSION
-            new["revisions"].append({
-                "revised_at": utc_now(),
-                "operation": "reprocess",
-                "reason": reason.strip(),
-                "tool_version": __version__,
-                "format_version": metadata.FORMAT_VERSION,
-                "changes": changes,
-            })
+            new["revisions"].append(
+                {
+                    "revised_at": utc_now(),
+                    "operation": "reprocess",
+                    "reason": reason.strip(),
+                    "tool_version": __version__,
+                    "format_version": metadata.FORMAT_VERSION,
+                    "changes": changes,
+                }
+            )
             metadata.validate(new, "medium")
             new_product = copy.deepcopy(product)
             for e in new_product["media"]:
                 if e["medium_id"] == medium:
                     e["format_version"] = new["format_version"]
-            same_names = [f["stored_as"] for f in new["raw_files"]] == [f["stored_as"] for f in old["raw_files"]]
+            same_names = [f["stored_as"] for f in new["raw_files"]] == [
+                f["stored_as"] for f in old["raw_files"]
+            ]
             stored = {f["stored_as"]: mdir / f["stored_as"] for f in old["raw_files"]}
 
-            def build(staging):
+            def build(staging: Path) -> None:
                 if same_names:
                     archiveset.build_set(staging, metadata=new, stored=stored)
                 else:
@@ -104,6 +134,9 @@ def reprocess(cfg, holon_text: str, medium_text: str, reason: str, *, redundancy
     issues = [Issue.from_dict(i) for i in new["issues"]]
     blocking = open_blocking(issues, new["accepted_issues"])
     if blocking:
-        click.echo(f"note: {len(blocking)} blocking issue(s) are not accepted under the current rules: "
-                   f"{', '.join(i.code for i in blocking)} (the recorded outcome is unchanged)")
+        click.echo(
+            f"note: {len(blocking)} blocking issue(s) are not accepted under the "
+            f"current rules: {', '.join(i.code for i in blocking)} (the recorded "
+            "outcome is unchanged)"
+        )
     return 0

@@ -21,7 +21,7 @@ def parse_utc(text: str) -> datetime:
     return datetime.strptime(text, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
 
 
-def dumps_json(obj) -> str:
+def dumps_json(obj: object) -> str:
     return json.dumps(obj, ensure_ascii=False, indent=2) + "\n"
 
 
@@ -35,11 +35,11 @@ def fsync_dir(path: Path) -> None:
 
 def atomic_write_bytes(path: Path, data: bytes) -> None:
     tmp = path.with_name(path.name + ".tmp")
-    with open(tmp, "wb") as handle:
+    with tmp.open("wb") as handle:
         handle.write(data)
         handle.flush()
         os.fsync(handle.fileno())
-    os.replace(tmp, path)
+    tmp.replace(path)
     fsync_dir(path.parent)
 
 
@@ -47,13 +47,13 @@ def atomic_write_text(path: Path, text: str) -> None:
     atomic_write_bytes(path, text.encode("utf-8"))
 
 
-def atomic_write_json(path: Path, obj) -> None:
+def atomic_write_json(path: Path, obj: object) -> None:
     atomic_write_text(path, dumps_json(obj))
 
 
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
-    with open(path, "rb") as handle:
+    with path.open("rb") as handle:
         while chunk := handle.read(CHUNK):
             digest.update(chunk)
     return digest.hexdigest()

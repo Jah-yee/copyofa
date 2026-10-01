@@ -1,8 +1,9 @@
 """Holon IDs, medium IDs and media lists."""
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 from .errors import UsageError
 
@@ -26,17 +27,27 @@ def holon_check_ok(holon: str) -> bool:
 def normalize_holon_id(text: str) -> str:
     """Return the canonical Holon ID or raise UsageError naming the failed rule."""
     canonical = (
-        text.upper().replace(" ", "").replace("-", "").replace("I", "1").replace("L", "1").replace("O", "0")
+        text.upper()
+        .replace(" ", "")
+        .replace("-", "")
+        .replace("I", "1")
+        .replace("L", "1")
+        .replace("O", "0")
     )
     bad = sorted({c for c in canonical if c not in _HOLON_INDEX})
     if bad:
         raise UsageError(
-            f"invalid Holon ID {text!r}: characters {''.join(bad)!r} are not in the alphabet {HOLON_ALPHABET}"
+            f"invalid Holon ID {text!r}: characters {''.join(bad)!r} are not "
+            f"in the alphabet {HOLON_ALPHABET}"
         )
     if len(canonical) != 5:
-        raise UsageError(f"invalid Holon ID {text!r}: must have 5 characters, got {len(canonical)}")
+        raise UsageError(
+            f"invalid Holon ID {text!r}: must have 5 characters, got {len(canonical)}"
+        )
     if not holon_check_ok(canonical):
-        raise UsageError(f"invalid Holon ID {text!r}: check character does not match (Luhn mod 32)")
+        raise UsageError(
+            f"invalid Holon ID {text!r}: check character does not match (Luhn mod 32)"
+        )
     return canonical
 
 
@@ -60,9 +71,15 @@ def parse_medium_id(text: str) -> MediumId:
     return MediumId(match.group(1), int(match.group(2)), match.group(3))
 
 
-def validate_media_list(value: "str | Iterable[str]", vocab: "Vocabulary") -> list[MediumId]:
+def validate_media_list(
+    value: str | Iterable[str], vocab: Vocabulary
+) -> list[MediumId]:
     """Parse and validate a declared media list (order preserved)."""
-    items = re.split(r"[,\s]+", value.strip()) if isinstance(value, str) else [str(v) for v in value]
+    items = (
+        re.split(r"[,\s]+", value.strip())
+        if isinstance(value, str)
+        else [str(v) for v in value]
+    )
     items = [item for item in items if item]
     if not items:
         raise UsageError("the media list is empty")
@@ -76,21 +93,27 @@ def validate_media_list(value: "str | Iterable[str]", vocab: "Vocabulary") -> li
         prefix = vocab.prefixes.get(medium.prefix)
         if prefix is None:
             raise UsageError(
-                f"unknown medium prefix {medium.prefix!r} in {key}; known prefixes: {', '.join(vocab.prefixes)} "
-                f"(vocabulary {vocab.path})"
+                f"unknown medium prefix {medium.prefix!r} in {key}; known "
+                f"prefixes: {', '.join(vocab.prefixes)} (vocabulary {vocab.path})"
             )
         if medium.side:
             if prefix.sides == "none":
-                raise UsageError(f"{key}: prefix {medium.prefix} does not take a side letter")
+                raise UsageError(
+                    f"{key}: prefix {medium.prefix} does not take a side letter"
+                )
             if medium.side not in ("A", "B"):
                 raise UsageError(f"{key}: side letter must be A or B")
         elif prefix.sides == "required":
-            raise UsageError(f"{key}: prefix {medium.prefix} requires a side letter (A or B)")
+            raise UsageError(
+                f"{key}: prefix {medium.prefix} requires a side letter (A or B)"
+            )
     sided = {(m.prefix, m.number) for m in media if m.side}
     unsided = {(m.prefix, m.number) for m in media if not m.side}
     for prefix_name, number in sorted(sided):
         if (prefix_name, number) in unsided:
-            raise UsageError(f"{prefix_name}{number} is listed both with and without a side letter")
+            raise UsageError(
+                f"{prefix_name}{number} is listed both with and without a side letter"
+            )
         for side in ("A", "B"):
             if f"{prefix_name}{number}{side}" not in seen:
                 raise UsageError(

@@ -1,30 +1,117 @@
+[build-system]
+build-backend = "uv_build"
+requires = [ "uv-build>=0.12.19,<0.13" ]
+
 [project]
 name = "copyofa"
 version = "0.1.0"
 description = "Archive optical discs bit-exactly with redumper"
 readme = "README.md"
-authors = [{ name = "Jean-Marc Fontaine", email = "jm@jmfontaine.net" }]
-requires-python = ">=3.14"
-dependencies = [
-    "click>=8.5.0",
-    "jsonschema>=4.26.0",
-    "pyobjc-framework-cocoa>=12.2.2",
-    "pyobjc-framework-diskarbitration>=12.2.2",
+authors = [ { name = "Jean-Marc Fontaine", email = "jm@jmfontaine.net" } ]
+requires-python = ">=3.14,<3.15"
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.14",
 ]
-
-[project.scripts]
-coa = "copyofa.cli:main"
-
-[build-system]
-requires = ["uv_build>=0.12.19,<0.13.0"]
-build-backend = "uv_build"
+dependencies = [
+  "click>=8.5",
+  "jsonschema>=4.26",
+  "pyobjc-core>=12.2.2",
+  "pyobjc-framework-cocoa>=12.2.2",
+  "pyobjc-framework-diskarbitration>=12.2.2",
+]
+scripts.coa = "copyofa.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=9.1.1"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-markers = [
-    "pilot: reads pilot dumps from $COA_PILOT_DUMPS (default ~/Dumps); skipped when absent",
-    "macos_integration: attaches a temporary disk image",
+dev = [
+  "deptry>=0.25.1",
+  "mypy>=2.4",
+  "pre-commit>=4.6.2",
+  "pyproject-fmt>=2.29.4",
+  "pytest>=9.1.1",
+  "pytest-cov>=7.1",
+  "ruff>=0.16.10",
+  "types-jsonschema>=4.26.0.20260518",
+  "vulture>=2.16",
 ]
+
+[tool.ruff]
+line-length = 88
+src = [ "src", "tests" ]
+lint.select = [
+  "A",    # flake8-builtins
+  "B",    # flake8-bugbear
+  "BLE",  # flake8-blind-except
+  "C4",   # flake8-comprehensions
+  "E",    # pycodestyle errors
+  "EXE",  # flake8-executable
+  "F",    # pyflakes
+  "I",    # isort
+  "ISC",  # flake8-implicit-str-concat
+  "N",    # pep8-naming
+  "PERF", # perflint
+  "PGH",  # pygrep-hooks
+  "PIE",  # flake8-pie
+  "PLE",  # pylint errors
+  "PLW",  # pylint warnings
+  "PT",   # flake8-pytest-style
+  "PTH",  # flake8-use-pathlib
+  "RET",  # flake8-return
+  "RSE",  # flake8-raise
+  "RUF",
+  "SIM",  # flake8-simplify
+  "T10",  # flake8-debugger
+  "UP",   # pyupgrade
+  "W",    # pycodestyle warnings
+]
+lint.ignore = [
+  "N818", # error-suffix-on-exception-name - `coa: <ExceptionName> [code]: ...` prints the class name, so UsageError, EnvironmentFailure etc. are part of the CLI output contract
+]
+
+[tool.deptry]
+package_module_name_map.pyobjc-core = "objc"
+package_module_name_map.pyobjc-framework-cocoa = [
+  "Cocoa",
+  "CoreFoundation",
+  "Foundation",
+  "AppKit",
+  "PyObjCTools"
+]
+package_module_name_map.pyobjc-framework-diskarbitration = "DiskArbitration"
+
+[tool.vulture]
+paths = [ "src", "tests" ]
+ignore_names = [
+  "appendable",    # MediumStatus field parsed from drutil status, kept with its siblings
+  "command_class", # read by click.Group when CoaGroup creates commands
+  "description",   # Profile field loaded from the profile TOML files
+  "pytestmark",    # read by pytest
+]
+# Click registers the commands and pytest the fixtures; nothing calls them by name.
+ignore_decorators = [ "@main.command", "@pytest.fixture" ]
+
+[tool.pyproject-fmt]
+column_width = 88
+max_supported_python = "3.14"
+
+[tool.mypy]
+files = [ "src", "tests" ]
+python_version = "3.14"
+strict = true
+
+[[tool.mypy.overrides]]
+# PyObjC ships neither stubs nor a py.typed marker.
+module = [ "CoreFoundation", "DiskArbitration", "objc" ]
+ignore_missing_imports = true
+
+[tool.pytest]
+ini_options.testpaths = [ "tests" ]
+ini_options.markers = [
+  "macos_integration: attaches a temporary disk image",
+  "pilot: reads the dumps in $COA_PILOT_DUMPS (default ~/Dumps); skipped when absent",
+]
+
+[tool.coverage]
+run.source = [ "copyofa" ]
+report.skip_empty = true
+report.show_missing = true

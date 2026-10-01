@@ -2,11 +2,14 @@
 
 import json
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import click
 
+from ..config import Config
 from ..errors import IntegrityFailure
 from ..util import sha256_file
 from . import metadata
@@ -36,12 +39,20 @@ def read_checksums(path: Path) -> list[tuple[str, str]]:
     return entries
 
 
-def fast_verify(medium_dir: Path, holon: str, medium: str, *, allow_journal: bool = False) -> list[Problem]:
+def fast_verify(
+    medium_dir: Path, holon: str, medium: str, *, allow_journal: bool = False
+) -> list[Problem]:
     prefix = f"{holon}-{medium}"
     where = str(medium_dir / prefix)
     problems: list[Problem] = []
     if (medium_dir / f"{prefix}.journal").exists() and not allow_journal:
-        problems.append(Problem("uncommitted", where, "a publication or reseal journal is present: run coa recover"))
+        problems.append(
+            Problem(
+                "uncommitted",
+                where,
+                "a publication or reseal journal is present: run coa recover",
+            )
+        )
     checksum = medium_dir / f"{prefix}.sha256"
     if not checksum.exists():
         problems.append(Problem("damage", where, f"{checksum.name} is missing"))
@@ -49,7 +60,7 @@ def fast_verify(medium_dir: Path, holon: str, medium: str, *, allow_journal: boo
     try:
         entries = read_checksums(checksum)
     except ValueError as exc:
-        return problems + [Problem("damage", where, str(exc))]
+        return [*problems, Problem("damage", where, str(exc))]
     listed = set()
     for digest, name in entries:
         listed.add(name)
@@ -58,36 +69,58 @@ def fast_verify(medium_dir: Path, holon: str, medium: str, *, allow_journal: boo
             problems.append(Problem("damage", where, f"{name} is missing"))
         elif sha256_file(path) != digest:
             problems.append(Problem("damage", where, f"{name} fails its checksum"))
-    for path in sorted(medium_dir.iterdir()):
-        if path.name.startswith(f"{prefix}.") and path.name not in listed and path != checksum and not (
-            path.name == f"{prefix}.journal"
-        ):
-            problems.append(Problem("unexpected", where, f"{path.name} is not listed in {checksum.name}"))
+    problems.extend(
+        Problem("unexpected", where, f"{path.name} is not listed in {checksum.name}")
+        for path in sorted(medium_dir.iterdir())
+        if (
+            path.name.startswith(f"{prefix}.")
+            and path.name not in listed
+            and path != checksum
+            and path.name != f"{prefix}.journal"
+        )
+    )
     return problems
 
 
-def medium_doc(medium_dir: Path, holon: str, medium: str) -> dict:
-    return json.loads((medium_dir / f"{holon}-{medium}.json").read_text(encoding="utf-8"))
+def medium_doc(medium_dir: Path, holon: str, medium: str) -> dict[str, Any]:
+    doc: dict[str, Any] = json.loads(
+        (medium_dir / f"{holon}-{medium}.json").read_text(encoding="utf-8")
+    )
+    return doc
 
 
 def verify_product(product_dir: Path, *, allow_journal: bool = False) -> list[Problem]:
     """Product files, layout and manifest-vs-metadata consistency."""
-    problems: list[Problem] = []
     where = str(product_dir)
-    for path in product_dir.iterdir():
-        if path.name.startswith((".coa-staging-", ".coa-backup-")):
-            problems.append(Problem("uncommitted", where, f"leftover {path.name}: run coa recover"))
-    journals = [p for p in [product_dir / "product.journal", *product_dir.glob("*.journal"),
-                            *product_dir.glob("*/*.journal")] if p.exists()]
+    problems: list[Problem] = [
+        Problem("uncommitted", where, f"leftover {path.name}: run coa recover")
+        for path in product_dir.iterdir()
+        if path.name.startswith((".coa-staging-", ".coa-backup-"))
+    ]
+    journals = [
+        p
+        for p in [
+            product_dir / "product.journal",
+            *product_dir.glob("*.journal"),
+            *product_dir.glob("*/*.journal"),
+        ]
+        if p.exists()
+    ]
     if journals and not allow_journal:
-        for journal in sorted(set(journals)):
-            problems.append(Problem("uncommitted", where, f"{journal.relative_to(product_dir)}: run coa recover"))
+        problems.extend(
+            Problem(
+                "uncommitted",
+                where,
+                f"{journal.relative_to(product_dir)}: run coa recover",
+            )
+            for journal in sorted(set(journals))
+        )
     try:
         doc = product_mod.read_product(product_dir)
     except FileNotFoundError:
-        return problems + [Problem("damage", where, "product.json is missing")]
+        return [*problems, Problem("damage", where, "product.json is missing")]
     except (IntegrityFailure, json.JSONDecodeError) as exc:
-        return problems + [Problem("damage", where, str(exc))]
+        return [*problems, Problem("damage", where, str(exc))]
     holon = doc["holon_id"]
     flat = product_mod.is_flat(doc)
     archived = {e["medium_id"]: e for e in doc["media"] if e["status"] == "archived"}
@@ -99,35 +132,60 @@ def verify_product(product_dir: Path, *, allow_journal: bool = False) -> list[Pr
             continue
         if path.is_dir():
             if name not in allowed_dirs:
-                problems.append(Problem("layout", where, f"unexpected directory {name}/"))
+                problems.append(
+                    Problem("layout", where, f"unexpected directory {name}/")
+                )
             continue
-        if name == "product.journal" or any(name.startswith(p) for p in medium_prefixes):
+        if name == "product.journal" or any(
+            name.startswith(p) for p in medium_prefixes
+        ):
             continue
         problems.append(Problem("layout", where, f"unexpected file {name}"))
     for medium, entry in archived.items():
         mdir = product_mod.medium_dir(product_dir, doc, medium)
         meta = mdir / f"{holon}-{medium}.json"
         if not meta.exists():
-            problems.append(Problem("layout", where, f"{medium} is archived but {meta.relative_to(product_dir)} is missing"))
+            problems.append(
+                Problem(
+                    "layout",
+                    where,
+                    f"{medium} is archived but {meta.relative_to(product_dir)} is "
+                    "missing",
+                )
+            )
             continue
         if not flat:
-            for path in mdir.iterdir():
-                if not path.name.startswith(f"{holon}-{medium}."):
-                    problems.append(Problem("layout", str(mdir), f"unexpected file {path.name}"))
+            problems.extend(
+                Problem("layout", str(mdir), f"unexpected file {path.name}")
+                for path in mdir.iterdir()
+                if not path.name.startswith(f"{holon}-{medium}.")
+            )
         try:
             m = medium_doc(mdir, holon, medium)
         except json.JSONDecodeError as exc:
-            problems.append(Problem("damage", str(mdir), f"metadata is not JSON: {exc}"))
+            problems.append(
+                Problem("damage", str(mdir), f"metadata is not JSON: {exc}")
+            )
             continue
-        expected = {"permanence": m.get("profile", {}).get("permanence"), "format_version": m.get("format_version"),
-                    "outcome": m.get("outcome")}
+        expected = {
+            "permanence": m.get("profile", {}).get("permanence"),
+            "format_version": m.get("format_version"),
+            "outcome": m.get("outcome"),
+        }
         actual = {k: entry.get(k) for k in expected}
         if expected != actual:
-            problems.append(Problem("damage", where, f"product.json entry for {medium} {actual} differs from metadata {expected}"))
+            problems.append(
+                Problem(
+                    "damage",
+                    where,
+                    f"product.json entry for {medium} {actual} differs from "
+                    f"metadata {expected}",
+                )
+            )
     return problems
 
 
-def check_metadata_schema(doc: dict) -> list[str]:
+def check_metadata_schema(doc: dict[str, Any]) -> list[str]:
     try:
         metadata.validate(doc, "medium")
     except IntegrityFailure as exc:
@@ -135,14 +193,24 @@ def check_metadata_schema(doc: dict) -> list[str]:
     return []
 
 
-# --- deep verification ----------------------------------------------------------------------------
+# --- deep verification ----------------------------------------------------------------
 
-_INFIX = re.compile(r"\.(stage-\d+-[a-z-]+\.console|verify-\d+\.log|preflight-[a-z-]+\.(txt|console))$")
+_INFIX = re.compile(
+    r"\.(stage-\d+-[a-z-]+\.console|verify-\d+\.log|preflight-[a-z-]+\.(txt|console))$"
+)
 
 
-def deep_verify(medium_dir: Path, holon: str, medium: str, doc: dict, cfg, *, scratch_prefix: str = "deep") -> list[Problem]:
-    """Deep level: rebuild every raw file, re-run split + hash, re-derive and compare the metadata."""
-    import os
+def deep_verify(
+    medium_dir: Path,
+    holon: str,
+    medium: str,
+    doc: dict[str, Any],
+    cfg: Config,
+    *,
+    scratch_prefix: str = "deep",
+) -> list[Problem]:
+    """Deep level: rebuild every raw file, re-run split + hash, re-derive and compare
+    the metadata."""
     import shutil
     import subprocess
 
@@ -170,13 +238,28 @@ def deep_verify(medium_dir: Path, holon: str, medium: str, doc: dict, cfg, *, sc
             target = raw_dir / entry["name"]
             size, digest = encoding.decode_to(medium_dir / entry["stored_as"], target)
             if (size, digest) != (entry["size"], entry["sha256"]):
-                problems.append(Problem("damage", where, f"{entry['stored_as']} does not rebuild {entry['name']} "
-                                                         "bit-exactly"))
+                problems.append(
+                    Problem(
+                        "damage",
+                        where,
+                        f"{entry['stored_as']} does not rebuild {entry['name']} "
+                        "bit-exactly",
+                    )
+                )
             raw[entry["name"]] = target
         if doc["redundancy"]["enabled"]:
-            proc = subprocess.run(["par2", "verify", "-q", f"{image}.par2"], cwd=medium_dir, capture_output=True)
+            proc = subprocess.run(
+                ["par2", "verify", "-q", f"{image}.par2"],
+                cwd=medium_dir,
+                capture_output=True,
+                check=False,
+            )
             if proc.returncode != 0:
-                problems.append(Problem("damage", where, f"par2 verify failed (exit {proc.returncode})"))
+                problems.append(
+                    Problem(
+                        "damage", where, f"par2 verify failed (exit {proc.returncode})"
+                    )
+                )
         if problems:
             return problems
         if doc["tracks"]:
@@ -184,57 +267,128 @@ def deep_verify(medium_dir: Path, holon: str, medium: str, doc: dict, cfg, *, sc
             split_dir.mkdir()
             for name, path in raw.items():
                 if not _INFIX.search(name) and not name.endswith(".log"):
-                    os.symlink(path, split_dir / name)
+                    (split_dir / name).symlink_to(path)
             redumper = shutil.which(cfg.redumper_path) or cfg.redumper_path
             forced = any(a["code"] == "split-refused" for a in doc["accepted_issues"])
             options = ["--leave-unchanged"] + (["--force-split"] if forced else [])
-            roms = {}
+            roms: dict[str, console.Rom] = {}
             for command, opts in (("split", options), ("hash", [])):
-                argv = build_argv(redumper, command, image_path=split_dir, image_name=image, options=opts)
-                proc = subprocess.run(argv, cwd=split_dir, capture_output=True)
+                argv = build_argv(
+                    redumper,
+                    command,
+                    image_path=split_dir,
+                    image_name=image,
+                    options=opts,
+                )
+                proc = subprocess.run(
+                    argv, cwd=split_dir, capture_output=True, check=False
+                )
                 (scratch / f"{command}.console").write_bytes(proc.stdout + proc.stderr)
                 if proc.returncode != 0:
-                    problems.append(Problem("damage", where, f"redumper {command} on the rebuilt raw files failed"))
+                    problems.append(
+                        Problem(
+                            "damage",
+                            where,
+                            f"redumper {command} on the rebuilt raw files failed",
+                        )
+                    )
                     return problems
                 if command == "hash":
                     roms = console.parse_hash(console.clean(proc.stdout))
             for track in doc["tracks"]:
                 rom = roms.get(track["file_name"])
-                actual = {"size": rom.size, "crc32": rom.crc32, "md5": rom.md5, "sha1": rom.sha1} if rom else None
+                actual = (
+                    {
+                        "size": rom.size,
+                        "crc32": rom.crc32,
+                        "md5": rom.md5,
+                        "sha1": rom.sha1,
+                    }
+                    if rom
+                    else None
+                )
                 if actual != track["hashes"]:
-                    problems.append(Problem("damage", where, f"track {track['number']}: re-split hashes differ"))
+                    problems.append(
+                        Problem(
+                            "damage",
+                            where,
+                            f"track {track['number']}: re-split hashes differ",
+                        )
+                    )
         from .metadata import recorded_inputs
 
-        derived = analysis.derive(holon, medium, raw, recorded_inputs(doc), Catalog.load(cfg.user_messages_path))
+        derived = analysis.derive(
+            holon,
+            medium,
+            raw,
+            recorded_inputs(doc),
+            Catalog.load(cfg.user_messages_path),
+        )
         for key in analysis.DERIVED_KEYS:
-            if json.dumps(derived[key], sort_keys=True) != json.dumps(doc[key], sort_keys=True):
-                problems.append(Problem("damage", where, f"re-derived /{key} differs from the stored metadata"))
+            if json.dumps(derived[key], sort_keys=True) != json.dumps(
+                doc[key], sort_keys=True
+            ):
+                problems.append(
+                    Problem(
+                        "damage",
+                        where,
+                        f"re-derived /{key} differs from the stored metadata",
+                    )
+                )
         names = {f["name"] for f in doc["raw_files"]}
         for stage in doc["stages"]:
             if stage["record"] not in names:
-                problems.append(Problem("damage", where, f"stage record {stage['record']} is not in raw_files"))
+                problems.append(
+                    Problem(
+                        "damage",
+                        where,
+                        f"stage record {stage['record']} is not in raw_files",
+                    )
+                )
         accepted_in_issues = {i["code"] for i in doc["issues"] if i["accepted"]}
         for acceptance in doc["accepted_issues"]:
             code = acceptance["code"]
-            if code not in accepted_in_issues and code not in metadata.PRE_DUMP_DECISIONS:
-                problems.append(Problem("damage", where, f"accepted issue {code} matches no accepted issue"))
+            if (
+                code not in accepted_in_issues
+                and code not in metadata.PRE_DUMP_DECISIONS
+            ):
+                problems.append(
+                    Problem(
+                        "damage",
+                        where,
+                        f"accepted issue {code} matches no accepted issue",
+                    )
+                )
         return problems
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
 
 
-# --- repair -------------------------------------------------------------------------------
+# --- repair ---------------------------------------------------------------------
 
 
 def _passing(directory: Path, checksum: Path) -> set[str]:
     try:
         entries = read_checksums(checksum)
-    except (ValueError, FileNotFoundError):
+    except ValueError, FileNotFoundError:
         return set()
-    return {n for d, n in entries if (directory / n).is_file() and sha256_file(directory / n) == d}
+    return {
+        n
+        for d, n in entries
+        if (directory / n).is_file() and sha256_file(directory / n) == d
+    }
 
 
-def repair_medium(cfg, pd: Path, product: dict, holon: str, medium: str, *, staged_verifier=None) -> list[str]:
+def repair_medium(
+    cfg: Config,
+    pd: Path,
+    product: dict[str, Any],
+    holon: str,
+    medium: str,
+    *,
+    staged_verifier: Callable[[Path, str, str | None], list[Problem | str]]
+    | None = None,
+) -> list[str]:
     """Repair a damaged medium from its PAR2 set on a scratch copy, then reseal it."""
     import shutil
     import subprocess
@@ -251,64 +405,93 @@ def repair_medium(cfg, pd: Path, product: dict, holon: str, medium: str, *, stag
     scratch.mkdir()
     try:
         for path in mdir.iterdir():
-            if path.is_file() and path.name.startswith(f"{image}.") and not path.name.endswith(".journal"):
+            if (
+                path.is_file()
+                and path.name.startswith(f"{image}.")
+                and not path.name.endswith(".journal")
+            ):
                 shutil.copyfile(path, scratch / path.name)
         checksum = scratch / f"{image}.sha256"
         before = _passing(scratch, checksum)
         try:
             listed = {n for _, n in read_checksums(checksum)}
-        except (ValueError, FileNotFoundError):
+        except ValueError, FileNotFoundError:
             listed = set()
         damaged = sorted(listed - before)
         par2_files = sorted(p.name for p in scratch.glob(f"{image}*.par2"))
         if not par2_files:
-            raise IntegrityFailure(f"{image}: no PAR2 files; unrecoverable: re-dump or restore from backup")
+            raise IntegrityFailure(
+                f"{image}: no PAR2 files; unrecoverable: re-dump or restore from backup"
+            )
         intact = [n for n in par2_files if n in before]
         ordered = intact + [n for n in par2_files if n not in intact]
         repaired = False
         for name in ordered:
-            proc = subprocess.run(["par2", "repair", "-q", name], cwd=scratch, capture_output=True)
+            proc = subprocess.run(
+                ["par2", "repair", "-q", name],
+                cwd=scratch,
+                capture_output=True,
+                check=False,
+            )
             if proc.returncode == 0:
                 repaired = True
                 break
         if not repaired:
-            raise IntegrityFailure(f"{image}: no PAR2 file could repair the damage; unrecoverable: re-dump or "
-                                   "restore from backup")
+            raise IntegrityFailure(
+                f"{image}: no PAR2 file could repair the damage; unrecoverable: "
+                "re-dump or restore from backup"
+            )
         for path in scratch.iterdir():
             if path.name not in listed and re.search(r"\.\d+$", path.name):
                 path.unlink()
         doc = json.loads((scratch / f"{image}.json").read_text(encoding="utf-8"))
         payload = [f["stored_as"] for f in doc["raw_files"]]
         if listed:
-            still = sorted(n for n in set(payload + [f"{image}.json"]) & listed if n not in _passing(scratch, checksum))
+            still = sorted(
+                n
+                for n in {*payload, f"{image}.json"} & listed
+                if n not in _passing(scratch, checksum)
+            )
             if still:
-                raise IntegrityFailure(f"{image}: still damaged after repair: {', '.join(still)}; unrecoverable: "
-                                       "re-dump or restore from backup")
-        doc["revisions"].append({
-            "revised_at": utc_now(),
-            "operation": "repair",
-            "reason": f"repaired {', '.join(damaged) or 'checksum file'}",
-            "tool_version": __version__,
-            "format_version": doc["format_version"],
-            "changes": [],
-        })
+                raise IntegrityFailure(
+                    f"{image}: still damaged after repair: {', '.join(still)}; "
+                    "unrecoverable: re-dump or restore from backup"
+                )
+        doc["revisions"].append(
+            {
+                "revised_at": utc_now(),
+                "operation": "repair",
+                "reason": f"repaired {', '.join(damaged) or 'checksum file'}",
+                "tool_version": __version__,
+                "format_version": doc["format_version"],
+                "changes": [],
+            }
+        )
         stored = {name: scratch / name for name in payload}
 
         def build(staging: Path) -> None:
             archiveset.build_set(staging, metadata=doc, stored=stored)
             product_mod.write_product_files(staging, product)
 
-        Transaction(pd, "reseal", holon, medium, cfg=cfg, staged_verifier=staged_verifier).run(build)
+        Transaction(
+            pd, "reseal", holon, medium, cfg=cfg, staged_verifier=staged_verifier
+        ).run(build)
         return damaged
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
 
 
-# --- command --------------------------------------------------------------------------------------
+# --- command ----------------------------------------------------------------------
 
 
-def verify_command(cfg, holon_text: str, medium_text: str | None = None, *, deep: bool = False,
-                   repair: bool = False) -> int:
+def verify_command(
+    cfg: Config,
+    holon_text: str,
+    medium_text: str | None = None,
+    *,
+    deep: bool = False,
+    repair: bool = False,
+) -> int:
     import contextlib
 
     from ..acquisition.workstate import product_marker
@@ -346,21 +529,29 @@ def verify_command(cfg, holon_text: str, medium_text: str | None = None, *, deep
                 if repair and found and not any(p.kind == "uncommitted" for p in found):
                     try:
                         fixed = repair_medium(cfg, pd, doc, holon, medium)
-                        click.echo(f"{holon} {medium}: repaired {', '.join(fixed) or 'checksum file'}")
+                        click.echo(
+                            f"{holon} {medium}: repaired "
+                            f"{', '.join(fixed) or 'checksum file'}"
+                        )
                         doc = product_mod.read_product(pd)
                         mdir = product_mod.medium_dir(pd, doc, medium)
                         found = fast_verify(mdir, holon, medium)
                     except IntegrityFailure as exc:
                         found.append(Problem("damage", str(mdir), str(exc)))
                 if deep and not found:
-                    found = deep_verify(mdir, holon, medium, medium_doc(mdir, holon, medium), cfg)
+                    found = deep_verify(
+                        mdir, holon, medium, medium_doc(mdir, holon, medium), cfg
+                    )
                 partial = ""
                 if not found:
                     meta = medium_doc(mdir, holon, medium)
                     if meta.get("partial"):
                         partial = f" partial ({meta['partial']['prefix']})"
                 status = "OK" if not found else "PROBLEMS"
-                click.echo(f"{holon} {medium}: {status}{' (deep)' if deep and not found else ''}{partial}")
+                click.echo(
+                    f"{holon} {medium}: {status}"
+                    f"{' (deep)' if deep and not found else ''}{partial}"
+                )
                 for problem in found:
                     click.echo(f"  {problem}")
                 problems += found

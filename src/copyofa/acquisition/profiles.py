@@ -1,8 +1,12 @@
 """Acquisition profiles."""
 
 import tomllib
+from collections.abc import Iterable
 from dataclasses import dataclass
 from importlib import resources
+from typing import Any
+
+from ..system.macos import Medium
 
 ORDER = ("cd-audio-pressed", "cd-provisional")
 
@@ -14,8 +18,13 @@ class Stage:
     options: tuple[str, ...]
     when: str | None
 
-    def as_dict(self) -> dict:
-        return {"command": self.command, "label": self.label, "options": list(self.options), "when": self.when}
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "command": self.command,
+            "label": self.label,
+            "options": list(self.options),
+            "when": self.when,
+        }
 
 
 @dataclass(frozen=True)
@@ -25,21 +34,22 @@ class Profile:
     status: str
     family: str
     description: str
-    strict_q: bool  # bad Q at track/index changes and uncertain MCN/ISRC need an explicit acceptance
-    match: dict
+    strict_q: bool  # bad Q at track/index changes and uncertain MCN/ISRC need an
+    # explicit acceptance
+    match: dict[str, Any]
     stages: tuple[Stage, ...]
 
     @property
     def key(self) -> str:
         return f"{self.name}@{self.version}"
 
-    def approved(self, approved_list) -> bool:
+    def approved(self, approved_list: Iterable[str]) -> bool:
         return self.key in approved_list and self.status != "provisional-only"
 
-    def matches(self, medium, prefix: str) -> bool:
+    def matches(self, medium: Medium, prefix: str) -> bool:
         if self.family != medium.family:
             return False
-        rules = {
+        rules: dict[str, Any] = {
             "prefixes": lambda v: prefix in v,
             "media_types": lambda v: medium.media_type in v,
             "sessions": lambda v: medium.sessions == v,
@@ -50,7 +60,9 @@ class Profile:
 
 
 def load(name: str) -> Profile:
-    text = (resources.files("copyofa") / "data" / "profiles" / f"{name}.toml").read_text(encoding="utf-8")
+    text = (
+        resources.files("copyofa") / "data" / "profiles" / f"{name}.toml"
+    ).read_text(encoding="utf-8")
     data = tomllib.loads(text)
     return Profile(
         name=data["name"],
@@ -61,13 +73,15 @@ def load(name: str) -> Profile:
         strict_q=bool(data.get("strict_q", False)),
         match=dict(data.get("match", {})),
         stages=tuple(
-            Stage(s["command"], s.get("label"), tuple(s.get("options", [])), s.get("when"))
+            Stage(
+                s["command"], s.get("label"), tuple(s.get("options", [])), s.get("when")
+            )
             for s in data.get("stages", [])
         ),
     )
 
 
-def match_profile(medium, prefix: str) -> Profile | None:
+def match_profile(medium: Medium, prefix: str) -> Profile | None:
     for name in ORDER:
         profile = load(name)
         if profile.matches(medium, prefix):

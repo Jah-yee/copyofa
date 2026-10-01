@@ -1,20 +1,24 @@
 """macOS device layer: drutil/ioreg identification, mount checks, mount refusal, locks.
 
-The tool never invokes diskutil, hdiutil, drutil eject/tray/burn/erase, and never mounts anything.
+The tool never invokes diskutil, hdiutil, drutil eject/tray/burn/erase, and never
+mounts anything.
 """
 
+import contextlib
 import fcntl
 import os
 import plistlib
 import re
 import threading
 import xml.etree.ElementTree as ET
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Callable
+from typing import Any
 
 import click
 
+from ..config import DriveConfig
 from ..errors import EnvironmentFailure
 from .procs import run_capture
 
@@ -35,7 +39,7 @@ def drutil(product: str, verb: str, xml: bool = True) -> tuple[int, bytes]:
     return run_capture(drutil_argv(product, verb, xml))
 
 
-# --- drutil status --------------------------------------------------------------------------------
+# --- drutil status --------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -60,7 +64,7 @@ class Medium:
     data_tracks: bool
     tracks: tuple[TrackInfo, ...]
 
-    def as_dict(self) -> dict:
+    def as_dict(self) -> dict[str, Any]:
         data = asdict(self)
         data["tracks"] = [asdict(t) for t in self.tracks]
         return data
@@ -113,51 +117,63 @@ def _int_attr(node: ET.Element | None, attr: str = "value") -> int | None:
 
 
 def parse_drutil_status(xml_bytes: bytes, product: str | None) -> MediumStatus | None:
-    """Parse `drutil -drive <product> status -xml` for the device whose product name equals `product`
-    (the first device when product is None)."""
+    """Parse `drutil -drive <product> status -xml` for the device whose product name
+    equals `product` (the first device when product is None)."""
     root = ET.fromstring(xml_bytes)
     for entry in root.iter("statusfordevice"):
         product_node = entry.find("device/product")
-        if product is not None and (product_node is None or product_node.get("name") != product):
+        if product is not None and (
+            product_node is None or product_node.get("name") != product
+        ):
             continue
         status = entry.find("deviceStatus")
         if status is None:
             return None
         info = status.find("mediaInfo")
-        tracks = []
+        tracks: list[TrackInfo] = []
         if info is not None:
-            for t in info.iterfind("trackInfoList/trackinfo"):
-                tracks.append(
-                    TrackInfo(
-                        number=_int_attr(t.find("trackNumber")) or 0,
-                        session=_int_attr(t.find("sessionNumber")) or 0,
-                        mode=_int_attr(t.find("trackMode")) or 0,
-                        start=_int_attr(t.find("startAddress"), "blockAddress") or 0,
-                        size=_int_attr(t.find("size"), "blockCount") or 0,
-                    )
+            tracks.extend(
+                TrackInfo(
+                    number=_int_attr(t.find("trackNumber")) or 0,
+                    session=_int_attr(t.find("sessionNumber")) or 0,
+                    mode=_int_attr(t.find("trackMode")) or 0,
+                    start=_int_attr(t.find("startAddress"), "blockAddress") or 0,
+                    size=_int_attr(t.find("size"), "blockCount") or 0,
                 )
+                for t in info.iterfind("trackInfoList/trackinfo")
+            )
         block = info.find("discInfo/discInfoBlock") if info is not None else None
 
-        def has(path: str) -> bool:
+        def has(path: str, info: ET.Element | None = info) -> bool:
             return info is not None and info.find(path) is not None
 
         return MediumStatus(
             present=status.find("mediaIsPresent") is not None,
             in_transition=status.find("mediaIsInTransition") is not None,
-            media_class=info.find("mediaClass").get("value") if has("mediaClass") else None,
-            media_type=info.find("mediaType").get("value") if has("mediaType") else None,
+            media_class=info.find("mediaClass").get("value")  # type: ignore[union-attr]
+            if has("mediaClass")
+            else None,
+            media_type=info.find("mediaType").get("value")  # type: ignore[union-attr]
+            if has("mediaType")
+            else None,
             blank=has("blank"),
             appendable=has("appendable"),
             erasable=has("erasable"),
-            disc_status=_int_attr(block.find("discStatus")) if block is not None else None,
-            last_session_state=_int_attr(block.find("LastSessionState")) if block is not None else None,
-            sessions=(_int_attr(block.find("sessionCount")) or 0) if block is not None else 0,
+            disc_status=_int_attr(block.find("discStatus"))
+            if block is not None
+            else None,
+            last_session_state=_int_attr(block.find("LastSessionState"))
+            if block is not None
+            else None,
+            sessions=(_int_attr(block.find("sessionCount")) or 0)
+            if block is not None
+            else 0,
             tracks=tuple(tracks),
         )
     return None
 
 
-# --- ioreg ----------------------------------------------------------------------------------------
+# --- ioreg ----------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -177,34 +193,35 @@ class DriveLocation:
     vendor: str
     product: str
     firmware: str
-    features: dict
+    features: dict[str, Any]
     bsd_name: str | None
     bridge: Bridge | None
     interconnect: str
 
 
-def _children(node: dict) -> list[dict]:
-    return node.get("IORegistryEntryChildren", [])
+def _children(node: dict[str, Any]) -> list[dict[str, Any]]:
+    children: list[dict[str, Any]] = node.get("IORegistryEntryChildren", [])
+    return children
 
 
-def _descendants(node: dict):
+def _descendants(node: dict[str, Any]) -> Iterator[dict[str, Any]]:
     for child in _children(node):
         yield child
         yield from _descendants(child)
 
 
-def _ioreg(cls: str) -> list[dict]:
+def _ioreg(cls: str) -> list[dict[str, Any]]:
     code, out = run_capture(["ioreg", "-a", "-l", "-r", "-c", cls])
     if code != 0 or not out.strip():
         return []
     try:
         data = plistlib.loads(out)
-    except Exception:
+    except Exception:  # noqa: BLE001 - malformed ioreg plist must not crash coa
         return []
     return data if isinstance(data, list) else [data]
 
 
-def _is_drive(node: dict, vendor: str, product: str) -> bool:
+def _is_drive(node: dict[str, Any], vendor: str, product: str) -> bool:
     return (
         str(node.get("Vendor Identification", "")).rstrip() == vendor.rstrip()
         and str(node.get("Product Identification", "")).rstrip() == product.rstrip()
@@ -212,15 +229,22 @@ def _is_drive(node: dict, vendor: str, product: str) -> bool:
 
 
 def find_drive(vendor: str, product: str) -> DriveLocation | None:
-    nub = next((n for n in _ioreg("IOSCSILogicalUnitNub") if _is_drive(n, vendor, product)), None)
+    nub = next(
+        (n for n in _ioreg("IOSCSILogicalUnitNub") if _is_drive(n, vendor, product)),
+        None,
+    )
     if nub is None:
         return None
-    features: dict = {}
+    features: dict[str, Any] = {}
     bsd_name = None
     for node in _descendants(nub):
         if "Device Characteristics" in node:
             chars = node["Device Characteristics"]
-            features = {k: chars.get(k) for k in ("CD Features", "DVD Features", "BD Features") if k in chars}
+            features = {
+                k: chars.get(k)
+                for k in ("CD Features", "DVD Features", "BD Features")
+                if k in chars
+            }
         name = node.get("BSD Name")
         if bsd_name is None and name and re.fullmatch(r"disk\d+", name):
             bsd_name = name
@@ -230,7 +254,8 @@ def find_drive(vendor: str, product: str) -> DriveLocation | None:
             bridge = Bridge(
                 vendor_id=f"0x{int(device.get('idVendor', 0)):04X}",
                 product_id=f"0x{int(device.get('idProduct', 0)):04X}",
-                name=device.get("USB Product Name") or device.get("IORegistryEntryName"),
+                name=device.get("USB Product Name")
+                or device.get("IORegistryEntryName"),
                 serial=device.get("kUSBSerialNumberString"),
             )
             break
@@ -251,7 +276,7 @@ def ioreg_record_argv(location: DriveLocation) -> list[str]:
     return ["ioreg", "-w0", "-l", "-r", "-c", "IOSCSILogicalUnitNub"]
 
 
-# --- mounts ---------------------------------------------------------------------------------------
+# --- mounts ---------------------------------------------------------------------------
 
 _MOUNT_RE = re.compile(r"^(/dev/\S+) on (.+) \(([^)]*)\)$")
 
@@ -268,10 +293,14 @@ def parse_mounts(text: str, bsd: str) -> list[Mount]:
     mounts = []
     for line in text.splitlines():
         match = _MOUNT_RE.match(line)
-        if not match or not re.fullmatch(rf"/dev/{re.escape(bsd)}(s\d+)?", match.group(1)):
+        if not match or not re.fullmatch(
+            rf"/dev/{re.escape(bsd)}(s\d+)?", match.group(1)
+        ):
             continue
         options = [o.strip() for o in match.group(3).split(",")]
-        mounts.append(Mount(match.group(1), match.group(2), options[0], "read-only" in options))
+        mounts.append(
+            Mount(match.group(1), match.group(2), options[0], "read-only" in options)
+        )
     return mounts
 
 
@@ -282,17 +311,17 @@ def mounts_for(bsd: str) -> list[Mount]:
     return parse_mounts(out.decode("utf-8", "replace"), bsd)
 
 
-# --- mount refusal -----------------------------------------------------------------------
+# --- mount refusal --------------------------------------------------------------------
 
 
-def _collapse(value) -> str:
+def _collapse(value: object) -> str:
     return " ".join(str(value or "").split())
 
 
-def drive_predicate(drives) -> Callable[[dict], bool]:
+def drive_predicate(drives: Iterable[DriveConfig]) -> Callable[[dict[str, Any]], bool]:
     targets = {(_collapse(d.vendor), _collapse(d.product)) for d in drives}
 
-    def predicate(desc: dict) -> bool:
+    def predicate(desc: dict[str, Any]) -> bool:
         vendor = _collapse(desc.get("DADeviceVendor"))
         model = _collapse(desc.get("DADeviceModel"))
         return (vendor, model) in targets
@@ -300,10 +329,10 @@ def drive_predicate(drives) -> Callable[[dict], bool]:
     return predicate
 
 
-def bsd_predicate(names) -> Callable[[dict], bool]:
+def bsd_predicate(names: Iterable[str]) -> Callable[[dict[str, Any]], bool]:
     names = set(names)
 
-    def predicate(desc: dict) -> bool:
+    def predicate(desc: dict[str, Any]) -> bool:
         bsd = str(desc.get("DAMediaBSDName") or "")
         base = re.sub(r"s\d+$", "", bsd)
         return bsd in names or base in names
@@ -312,9 +341,10 @@ def bsd_predicate(names) -> Callable[[dict], bool]:
 
 
 class MountGuard:
-    """Refuse every mount of matching disks while active (DiskArbitration mount-approval callback)."""
+    """Refuse every mount of matching disks while active (DiskArbitration mount-approval
+    callback)."""
 
-    def __init__(self, predicate: Callable[[dict], bool]) -> None:
+    def __init__(self, predicate: Callable[[dict[str, Any]], bool]) -> None:
         self.predicate = predicate
         self._thread: threading.Thread | None = None
         self._ready = threading.Event()
@@ -323,96 +353,116 @@ class MountGuard:
         self._callback = None
         self.refused: list[str] = []
 
-    def _approve(self, disk, context):
-        import CoreFoundation as CF
-        import DiskArbitration as DA
+    def _approve(self, disk: Any, context: Any) -> Any:
+        import CoreFoundation
+        import DiskArbitration
 
         desc = None
         try:
-            raw = DA.DADiskCopyDescription(disk)
+            raw = DiskArbitration.DADiskCopyDescription(disk)
             desc = {str(k): raw[k] for k in raw} if raw is not None else None
-        except Exception:
+        except Exception:  # noqa: BLE001 - bad disk desc must not crash coa
             desc = None
         try:
             refuse = desc is None or self.predicate(desc)
-        except Exception:
+        except Exception:  # noqa: BLE001 - broken predicate must still refuse
             refuse = True
         if not refuse:
             return None
         bsd = (desc or {}).get("DAMediaBSDName") or "an unidentified disk"
         self.refused.append(str(bsd))
         click.echo(f"coa: refused mount of {bsd}", err=True)
-        dissenter = DA.DADissenterCreate(None, DA.kDAReturnNotPermitted, "coa controls this drive")
-        # DiskArbitration releases the returned dissenter; PyObjC also releases its own reference when the
-        # Python wrapper dies, so hand DA an extra retain (without it the process crashes, SIGTRAP).
-        CF.CFRetain(dissenter)
+        dissenter = DiskArbitration.DADissenterCreate(
+            None, DiskArbitration.kDAReturnNotPermitted, "coa controls this drive"
+        )
+        # DiskArbitration releases the returned dissenter; PyObjC also releases its own
+        # reference when the Python wrapper dies, so hand DA an extra retain (without it
+        # the process crashes, SIGTRAP).
+        CoreFoundation.CFRetain(dissenter)
         return dissenter
 
     def _run(self) -> None:
-        import CoreFoundation as CF
-        import DiskArbitration as DA
+        import CoreFoundation
+        import DiskArbitration
         import objc
 
-        self._session = DA.DASessionCreate(None)
+        self._session = DiskArbitration.DASessionCreate(None)
 
-        @objc.callbackFor(DA.DARegisterDiskMountApprovalCallback)
-        def callback(disk, context):
+        register_callback = objc.callbackFor(
+            DiskArbitration.DARegisterDiskMountApprovalCallback
+        )
+
+        @register_callback  # type: ignore[untyped-decorator]
+        def callback(disk: Any, context: Any) -> Any:
             return self._approve(disk, context)
 
         self._callback = callback
-        DA.DARegisterDiskMountApprovalCallback(self._session, None, self._callback, None)
-        self._runloop = CF.CFRunLoopGetCurrent()
-        DA.DASessionScheduleWithRunLoop(self._session, self._runloop, CF.kCFRunLoopDefaultMode)
+        DiskArbitration.DARegisterDiskMountApprovalCallback(
+            self._session, None, self._callback, None
+        )
+        self._runloop = CoreFoundation.CFRunLoopGetCurrent()
+        DiskArbitration.DASessionScheduleWithRunLoop(
+            self._session, self._runloop, CoreFoundation.kCFRunLoopDefaultMode
+        )
         self._ready.set()
-        CF.CFRunLoopRun()
-        DA.DASessionUnscheduleFromRunLoop(self._session, self._runloop, CF.kCFRunLoopDefaultMode)
+        CoreFoundation.CFRunLoopRun()
+        DiskArbitration.DASessionUnscheduleFromRunLoop(
+            self._session, self._runloop, CoreFoundation.kCFRunLoopDefaultMode
+        )
 
-    def __enter__(self) -> "MountGuard":
-        self._thread = threading.Thread(target=self._run, name="coa-mount-guard", daemon=True)
+    def __enter__(self) -> MountGuard:
+        self._thread = threading.Thread(
+            target=self._run, name="coa-mount-guard", daemon=True
+        )
         self._thread.start()
         if not self._ready.wait(10):
-            raise EnvironmentFailure("could not register the DiskArbitration mount-approval callback")
+            raise EnvironmentFailure(
+                "could not register the DiskArbitration mount-approval callback"
+            )
         return self
 
-    def __exit__(self, *exc) -> None:
-        import CoreFoundation as CF
-        import DiskArbitration as DA
+    def __exit__(self, *exc: object) -> None:
+        import CoreFoundation
+        import DiskArbitration
         import objc
 
-        try:
-            DA.DAUnregisterApprovalCallback(self._session, objc.callbackPointer(self._callback), None)
-        except Exception:
-            pass
+        with contextlib.suppress(Exception):
+            DiskArbitration.DAUnregisterApprovalCallback(
+                self._session, objc.callbackPointer(self._callback), None
+            )
         if self._runloop is not None:
-            CF.CFRunLoopStop(self._runloop)
+            CoreFoundation.CFRunLoopStop(self._runloop)
         if self._thread is not None:
             self._thread.join(10)
 
 
-# --- locks ----------------------------------------------------------------------------------------
+# --- locks ----------------------------------------------------------------------------
 
 
 class FileLock:
-    """Exclusive non-blocking flock(2) on a file; the lock, not the file, grants ownership."""
+    """Exclusive non-blocking flock(2) on a file; the lock, not the file, grants
+    ownership."""
 
     def __init__(self, path: Path) -> None:
         self.path = path
         self.fd: int | None = None
 
-    def __enter__(self) -> "FileLock":
+    def __enter__(self) -> FileLock:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         fd = os.open(self.path, os.O_RDWR | os.O_CREAT, 0o644)
         try:
             fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             os.close(fd)
-            raise EnvironmentFailure(f"{self.path} is held by another coa process", code="lock-busy") from None
+            raise EnvironmentFailure(
+                f"{self.path} is held by another coa process", code="lock-busy"
+            ) from None
         os.ftruncate(fd, 0)
         os.write(fd, f"{os.getpid()}\n".encode())
         self.fd = fd
         return self
 
-    def __exit__(self, *exc) -> None:
+    def __exit__(self, *exc: object) -> None:
         if self.fd is not None:
             fcntl.flock(self.fd, fcntl.LOCK_UN)
             os.close(self.fd)

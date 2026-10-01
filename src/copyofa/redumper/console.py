@@ -1,6 +1,7 @@
 """Parsers for redumper b753 console records and logs.
 
-Every parser is tolerant of missing blocks and returns None (or an empty value) when its block is absent.
+Every parser is tolerant of missing blocks and returns None (or an empty value) when its
+block is absent.
 """
 
 import re
@@ -13,20 +14,25 @@ _SESSION_RE = re.compile(r"^\s*session (\d+)$")
 _TRACK_RE = re.compile(r"^\s*track (\w+) \{\s*(audio|data)\s*\}$")
 _DISC_INDEX_RE = re.compile(r"^\s*index (\d+) \{ LBA:\s*(-?\d+), MSF: [\d:]+ \}$")
 _FINAL_INDEX_RE = re.compile(
-    r"^\s*index (\d+) \{ LBA: \[\s*(-?\d+) \.\.\s*(-?\d+)\], length:\s*(\d+), MSF: [\d:]+-[\d:]+ \}$"
+    r"^\s*index (\d+) \{ LBA: \[\s*(-?\d+) \.\.\s*(-?\d+)\], length:\s*(\d+), "
+    r"MSF: [\d:]+-[\d:]+ \}$"
 )
 
 
 def clean(raw: bytes) -> list[str]:
-    """Decode a console record and drop carriage-return rewrites: keep the text after the last \\r."""
+    """Decode a console record and drop carriage-return rewrites: keep the text after
+    the last \\r.
+    """
     text = raw.decode("utf-8", errors="replace")
     return [line.rsplit("\r", 1)[-1].rstrip() for line in text.split("\n")]
 
 
 def sections(lines: list[str]) -> dict[str, list[str]]:
-    """Split cleaned lines at `*** NAME (time check: Ns)` headers; lines before the first header are `HEADER`.
+    """Split cleaned lines at `*** NAME (time check: Ns)` headers; lines before the
+    first header are `HEADER`.
 
-    A name that occurs more than once (several runs in one log) keeps its last occurrence.
+    A name that occurs more than once (several runs in one log) keeps its last
+    occurrence.
     """
     result: dict[str, list[str]] = {}
     current = "HEADER"
@@ -42,7 +48,9 @@ def sections(lines: list[str]) -> dict[str, list[str]]:
 
 
 def _block(lines: list[str], title: str) -> list[str] | None:
-    """Lines following the line equal to `title` (after rstrip) up to the next empty line."""
+    """Lines following the line equal to `title` (after rstrip) up to the next
+    empty line.
+    """
     for i, line in enumerate(lines):
         if line == title:
             block: list[str] = []
@@ -54,7 +62,7 @@ def _block(lines: list[str], title: str) -> list[str] | None:
     return None
 
 
-# --- header -------------------------------------------------------------------------------------
+# --- header ---------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -82,7 +90,9 @@ class Header:
     read_speed: str | None
 
 
-_INQUIRY_RE = re.compile(r"^  inquiry: (.*) - (.*) \(revision level: (.*), vendor specific: (.*)\)$")
+_INQUIRY_RE = re.compile(
+    r"^  inquiry: (.*) - (.*) \(revision level: (.*), vendor specific: (.*)\)$"
+)
 _CONFIG_RE = re.compile(r"^  configuration: (\S+) \((.*)\)$")
 
 
@@ -122,7 +132,11 @@ def parse_header(lines: list[str]) -> Header | None:
 
         def as_int(key: str) -> int | None:
             value = fields.get(key)
-            return int(value) if value is not None and re.fullmatch(r"[+-]?\d+", value) else None
+            return (
+                int(value)
+                if value is not None and re.fullmatch(r"[+-]?\d+", value)
+                else None
+            )
 
         drive = DriveInfo(
             path=path,
@@ -138,10 +152,16 @@ def parse_header(lines: list[str]) -> Header | None:
             read_method=fields.get("read method"),
             sector_order=fields.get("sector order"),
         )
-    return Header(build=build, arguments=arguments, drive=drive, profile=profile, read_speed=read_speed)
+    return Header(
+        build=build,
+        arguments=arguments,
+        drive=drive,
+        profile=profile,
+        read_speed=read_speed,
+    )
 
 
-# --- TOC ----------------------------------------------------------------------------------------
+# --- TOC ------------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -176,7 +196,11 @@ class Toc:
         return sorted({t.session for t in self.tracks})
 
     def leadout(self, session: int | None = None) -> TocTrack | None:
-        outs = [t for t in self.tracks if t.number == "AA" and (session is None or t.session == session)]
+        outs = [
+            t
+            for t in self.tracks
+            if t.number == "AA" and (session is None or t.session == session)
+        ]
         return outs[-1] if outs else None
 
     @property
@@ -199,10 +223,17 @@ def _parse_toc_block(block: list[str] | None, final: bool) -> Toc | None:
         elif (match := index_re.match(line)) and tracks:
             if final:
                 tracks[-1].indices.append(
-                    TocIndex(int(match.group(1)), int(match.group(2)), int(match.group(3)), int(match.group(4)))
+                    TocIndex(
+                        int(match.group(1)),
+                        int(match.group(2)),
+                        int(match.group(3)),
+                        int(match.group(4)),
+                    )
                 )
             else:
-                tracks[-1].indices.append(TocIndex(int(match.group(1)), int(match.group(2))))
+                tracks[-1].indices.append(
+                    TocIndex(int(match.group(1)), int(match.group(2)))
+                )
     return Toc(tracks)
 
 
@@ -210,7 +241,7 @@ def parse_disc_toc(lines: list[str]) -> Toc | None:
     return _parse_toc_block(_block(lines, "disc TOC:"), final=False)
 
 
-# --- counts -------------------------------------------------------------------------------------
+# --- counts ---------------------------------------------------------------------------
 
 
 def _parse_counts(lines: list[str], title: str, q_suffix: str) -> Counts | None:
@@ -225,7 +256,9 @@ def _parse_counts(lines: list[str], title: str, q_suffix: str) -> Counts | None:
             values["Q"] = int(match.group(1))
     if set(values) != {"SCSI", "C2", "Q"}:
         return None
-    return Counts(scsi_samples=values["SCSI"], c2_samples=values["C2"], q_sectors=values["Q"])
+    return Counts(
+        scsi_samples=values["SCSI"], c2_samples=values["C2"], q_sectors=values["Q"]
+    )
 
 
 def parse_media_errors(lines: list[str]) -> Counts | None:
@@ -236,7 +269,7 @@ def parse_correction(lines: list[str]) -> Counts | None:
     return _parse_counts(lines, "correction statistics:", " sectors")
 
 
-# --- lead-in ------------------------------------------------------------------------------------
+# --- lead-in --------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -260,14 +293,26 @@ def parse_leadin(lines: list[str]) -> LeadIn | None:
         seen = True
         if re.match(r"^PLEXTOR: reading lead-in \(retry: \d+\)$", line):
             attempts += 1
-        elif match := re.match(r"^PLEXTOR: lead-in found \(LBA: \[(-?\d+) \.\. (-?\d+)\], sectors: (\d+)\)$", line):
-            found.append((int(match.group(1)), int(match.group(2)), int(match.group(3))))
+        elif match := re.match(
+            r"^PLEXTOR: lead-in found \(LBA: \[(-?\d+) \.\. (-?\d+)\], sectors: "
+            r"(\d+)\)$",
+            line,
+        ):
+            found.append(
+                (int(match.group(1)), int(match.group(2)), int(match.group(3)))
+            )
         elif line == "PLEXTOR: lead-in not identified":
             not_identified += 1
-        elif match := re.match(r"^PLEXTOR: lead-in discarded as unverified \(LBA: \[(-?\d+) \.\. (-?\d+)\]\)$", line):
+        elif match := re.match(
+            r"^PLEXTOR: lead-in discarded as unverified \(LBA: \[(-?\d+) \.\. "
+            r"(-?\d+)\]\)$",
+            line,
+        ):
             discarded.append((int(match.group(1)), int(match.group(2))))
         elif match := re.match(
-            r"^PLEXTOR: storing lead-in \(LBA: \[(-?\d+) \.\. (-?\d+)\], verified: (yes|no)\)$", line
+            r"^PLEXTOR: storing lead-in \(LBA: \[(-?\d+) \.\. (-?\d+)\], verified: "
+            r"(yes|no)\)$",
+            line,
         ):
             stored = (int(match.group(1)), int(match.group(2)), match.group(3) == "yes")
     if not seen:
@@ -276,7 +321,9 @@ def parse_leadin(lines: list[str]) -> LeadIn | None:
 
 
 def parse_protection(lines: list[str]) -> str | None:
-    values = [line[len("protection: ") :] for line in lines if line.startswith("protection: ")]
+    values = [
+        line[len("protection: ") :] for line in lines if line.startswith("protection: ")
+    ]
     return "; ".join(values) if values else None
 
 
@@ -287,11 +334,16 @@ def parse_drive_test(lines: list[str]) -> str | None:
     return None
 
 
-# --- split --------------------------------------------------------------------------------------
+# --- split ----------------------------------------------------------------------------
 
 OFFSET_METHOD_PATTERNS = [
     ("perfect-audio-offset", re.compile(r"^Perfect Audio Offset applied$")),
-    ("moved-out-of-range", re.compile(r"^moving data out of (lead-out|lead-in|TOC) \(difference: [+-]\d+\)$")),
+    (
+        "moved-out-of-range",
+        re.compile(
+            r"^moving data out of (lead-out|lead-in|TOC) \(difference: [+-]\d+\)$"
+        ),
+    ),
     ("fallback-zero", re.compile(r"^fallback offset 0 applied$")),
     ("data-track", re.compile(r"^data disc detected, offset configuration:$")),
 ]
@@ -320,7 +372,9 @@ class Split:
 
 
 def _range(line: str, prefix: str) -> tuple[int, int] | None:
-    match = re.match(rf"^{re.escape(prefix)} \[\s*([+-]?\d+) \.\.\s*([+-]?\d+)\]$", line)
+    match = re.match(
+        rf"^{re.escape(prefix)} \[\s*([+-]?\d+) \.\.\s*([+-]?\d+)\]$", line
+    )
     return (int(match.group(1)), int(match.group(2))) if match else None
 
 
@@ -344,9 +398,13 @@ def parse_split(lines: list[str]) -> Split | None:
             data_range = r
         elif match := re.match(r"^Universal Hash \(SHA-1\): ([0-9a-f]{40})$", line):
             universal = match.group(1)
-        elif match := re.match(r"^Perfect Audio Offset \(silence level: (\d+)\): (.*)$", line):
+        elif match := re.match(
+            r"^Perfect Audio Offset \(silence level: (\d+)\): (.*)$", line
+        ):
             ranges = []
-            for item in re.finditer(r"\[([+-]?\d+) \.\. ([+-]?\d+)\]|([+-]?\d+)", match.group(2)):
+            for item in re.finditer(
+                r"\[([+-]?\d+) \.\. ([+-]?\d+)\]|([+-]?\d+)", match.group(2)
+            ):
                 if item.group(3) is not None:
                     ranges.append((int(item.group(3)), int(item.group(3))))
                 else:
@@ -359,7 +417,9 @@ def parse_split(lines: list[str]) -> Split | None:
             r"samples: \{SKIP: (\d+), C2: (\d+)\}$",
             line,
         ):
-            track_errors[match.group(1)] = tuple(int(match.group(i)) for i in range(2, 6))  # type: ignore[assignment]
+            track_errors[match.group(1)] = tuple(
+                int(match.group(i)) for i in range(2, 6)
+            )  # type: ignore[assignment]
         elif line == "error: data errors detected, unable to continue":
             refused = True
         if line == "Perfect Audio Offset applied":
@@ -367,10 +427,11 @@ def parse_split(lines: list[str]) -> Split | None:
         for name, pattern in OFFSET_METHOD_PATTERNS:
             if pattern.match(line):
                 method, method_line = name, line
-    multisession = []
-    for line in _block(lines, "multisession:") or []:
-        if match := re.match(r"^  session (\d+): (-?\d+)-(-?\d+)$", line):
-            multisession.append((int(match.group(1)), int(match.group(2)), int(match.group(3))))
+    multisession = [
+        (int(match.group(1)), int(match.group(2)), int(match.group(3)))
+        for line in _block(lines, "multisession:") or []
+        if (match := re.match(r"^  session (\d+): (-?\d+)-(-?\d+)$", line))
+    ]
     cue_text = None
     for i, line in enumerate(lines):
         if re.match(r"^CUE \[.*\]:$", line):
@@ -399,11 +460,21 @@ def parse_split(lines: list[str]) -> Split | None:
     )
 
 
-# --- CUE ----------------------------------------------------------------------------------------
+# --- CUE ------------------------------------------------------------------------------
 
 CD_TEXT_KEYWORDS = {
-    "TITLE", "PERFORMER", "SONGWRITER", "COMPOSER", "ARRANGER", "MESSAGE", "DISC_ID", "GENRE",
-    "TOC_INFO1", "TOC_INFO2", "UPC_EAN", "SIZE_INFO",
+    "TITLE",
+    "PERFORMER",
+    "SONGWRITER",
+    "COMPOSER",
+    "ARRANGER",
+    "MESSAGE",
+    "DISC_ID",
+    "GENRE",
+    "TOC_INFO1",
+    "TOC_INFO2",
+    "UPC_EAN",
+    "SIZE_INFO",
 }
 
 
@@ -416,7 +487,9 @@ class CueFile:
     isrc: str | None = None
     flags: set[str] = field(default_factory=set)
     cd_text: list[tuple[str, str]] = field(default_factory=list)
-    indices: dict[int, int] = field(default_factory=dict)  # index -> frames from file start
+    indices: dict[int, int] = field(
+        default_factory=dict
+    )  # index -> frames from file start
 
 
 @dataclass
@@ -425,7 +498,9 @@ class Cue:
     cd_text: list[tuple[str, str]]
     rem: list[str]
     files: list[CueFile]
-    session_rem: dict[int, dict[str, str]]  # session -> {"LEAD-IN": "01:00:00", "PREGAP": ..., "LEAD-OUT": ...}
+    session_rem: dict[
+        int, dict[str, str]
+    ]  # session -> {"LEAD-IN": "01:00:00", "PREGAP": ..., "LEAD-OUT": ...}
 
 
 def _unquote(value: str) -> str:
@@ -467,7 +542,14 @@ def parse_cue(text: str) -> Cue:
             pending_name = match.group(1) if match else rest
         elif keyword == "TRACK":
             number, _, cue_type = rest.partition(" ")
-            files.append(CueFile(name=pending_name or "", track=int(number), cue_type=cue_type, session=session))
+            files.append(
+                CueFile(
+                    name=pending_name or "",
+                    track=int(number),
+                    cue_type=cue_type,
+                    session=session,
+                )
+            )
         elif not files:
             disc_text.append((keyword, _unquote(rest)))
         elif keyword == "INDEX":
@@ -479,10 +561,16 @@ def parse_cue(text: str) -> Cue:
             files[-1].flags = set(rest.split())
         elif keyword in CD_TEXT_KEYWORDS:
             files[-1].cd_text.append((keyword, _unquote(rest)))
-    return Cue(catalog=catalog, cd_text=disc_text, rem=rem, files=files, session_rem=session_rem)
+    return Cue(
+        catalog=catalog,
+        cd_text=disc_text,
+        rem=rem,
+        files=files,
+        session_rem=session_rem,
+    )
 
 
-# --- hash ---------------------------------------------------------------------------------------
+# --- hash -----------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -494,7 +582,8 @@ class Rom:
 
 
 _ROM_RE = re.compile(
-    r'^<rom name="(.*)" size="(\d+)" crc="([0-9a-f]{8})" md5="([0-9a-f]{32})" sha1="([0-9a-f]{40})" />$'
+    r'^<rom name="(.*)" size="(\d+)" crc="([0-9a-f]{8})" md5="([0-9a-f]{32})"'
+    r' sha1="([0-9a-f]{40})" />$'
 )
 
 
@@ -502,5 +591,7 @@ def parse_hash(lines: list[str]) -> dict[str, Rom]:
     roms: dict[str, Rom] = {}
     for line in lines:
         if match := _ROM_RE.match(line):
-            roms[match.group(1)] = Rom(int(match.group(2)), match.group(3), match.group(4), match.group(5))
+            roms[match.group(1)] = Rom(
+                int(match.group(2)), match.group(3), match.group(4), match.group(5)
+            )
     return roms

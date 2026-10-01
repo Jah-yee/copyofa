@@ -1,5 +1,5 @@
-"""`coa archive`, `coa refine`, `coa accept`, `coa discard`, `coa drive-test`: identification, safety checks,
-staged and resumable acquisition."""
+"""`coa archive`, `coa refine`, `coa accept`, `coa discard`, `coa drive-test`:
+identification, safety checks, staged and resumable acquisition."""
 
 import contextlib
 import json
@@ -8,6 +8,7 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 import click
 
@@ -19,9 +20,9 @@ from ..ids import MediumId, normalize_holon_id, parse_medium_id, validate_media_
 from ..issues import Issue, open_blocking, render
 from ..redumper import console, rawdata
 from ..redumper.commands import build_argv, redumper_build
-from ..redumper.messages import Catalog
+from ..redumper.messages import Catalog, Classified
 from ..system import macos
-from ..system.procs import run_recorded
+from ..system.procs import StageRun, run_recorded
 from ..util import atomic_write_json, utc_now
 from . import profiles
 from .workstate import (
@@ -50,7 +51,7 @@ class Run:
     holon: str
     medium: MediumId
     paths: WorkPaths
-    state: dict
+    state: dict[str, Any]
     redumper: str = ""
     build: str = ""
     drive: DriveConfig | None = None
@@ -66,33 +67,49 @@ class Run:
 
 
 class Stop(Exception):
-    """Stop the run with an exit code after the state has been saved and issues rendered."""
+    """Stop the run with an exit code after the state has been saved and issues
+    rendered."""
 
     def __init__(self, exit_code: int) -> None:
         super().__init__(exit_code)
         self.exit_code = exit_code
 
 
-def stage_failed_issue(holon: str, medium: str, stage: str, nn: int, exit_code: int, interrupted: bool) -> Issue:
+def stage_failed_issue(
+    holon: str, medium: str, stage: str, nn: int, exit_code: int, interrupted: bool
+) -> Issue:
     reason = "was interrupted" if interrupted else f"exited with status {exit_code}"
+    action = (
+        f"rerun: coa archive {holon} {medium} (repeats the stage; keep the disc "
+        f"in the drive)"
+    )
     return Issue(
         code="stage-failed",
         severity="blocking",
         title="redumper stage did not complete",
         what=f"stage {nn:02d} ({stage}) {reason}",
-        why="the stage is incomplete; its outputs cannot be trusted until it is repeated",
-        actions=[f"rerun: coa archive {holon} {medium} (repeats the stage; keep the disc in the drive)"],
+        why="the stage is incomplete; its outputs cannot be trusted until it is "
+        "repeated",
+        actions=[action],
         acceptable=False,
-        values={"stage": stage, "nn": nn, "exit_code": exit_code, "interrupted": interrupted},
+        values={
+            "stage": stage,
+            "nn": nn,
+            "exit_code": exit_code,
+            "interrupted": interrupted,
+        },
     )
 
 
-def catalog_issue(item, holon: str, medium: str) -> Issue:
+def catalog_issue(item: Classified, holon: str, medium: str) -> Issue:
     actions = [item.action] if item.action else []
     if item.acceptable:
         actions.append(f"coa accept {holon} {medium} {item.code} --reason TEXT")
     else:
-        actions.append(f"fix the drive or environment, then coa discard {holon} {medium} --yes and archive again")
+        actions.append(
+            f"fix the drive or environment, then coa discard {holon} {medium} --yes "
+            f"and archive again"
+        )
     return Issue(
         code=item.code,
         severity=item.cls,
@@ -105,7 +122,7 @@ def catalog_issue(item, holon: str, medium: str) -> Issue:
     )
 
 
-# --- setup ----------------------------------------------------------------------------------------
+# --- setup ----------------------------------------------------------------------------
 
 
 def open_run(cfg: Config, holon_text: str, medium_text: str) -> Run:
@@ -114,18 +131,26 @@ def open_run(cfg: Config, holon_text: str, medium_text: str) -> Run:
     medium = parse_medium_id(medium_text)
     prefix = vocab.prefixes.get(medium.prefix)
     if prefix is None:
-        raise UsageError(f"unknown medium prefix {medium.prefix!r} (vocabulary {vocab.path})")
+        raise UsageError(
+            f"unknown medium prefix {medium.prefix!r} (vocabulary {vocab.path})"
+        )
     if prefix.handled_by != "coa":
-        raise MediumRejected(f"{medium} is handled elsewhere ({prefix.handled_by})", code="handled-elsewhere")
+        raise MediumRejected(
+            f"{medium} is handled elsewhere ({prefix.handled_by})",
+            code="handled-elsewhere",
+        )
     paths = WorkPaths(cfg.work_root, holon, str(medium))
-    return Run(cfg, vocab, Catalog.load(cfg.user_messages_path), holon, medium, paths, {})
+    return Run(
+        cfg, vocab, Catalog.load(cfg.user_messages_path), holon, medium, paths, {}
+    )
 
 
 def check_product(run: Run, media_list: str | None) -> None:
     """The medium must be on the product's media list and not archived yet."""
     if product_marker(run.cfg.work_root, run.holon).exists():
         raise EnvironmentFailure(
-            f"the layout of {run.holon} changed in an amendment: run coa verify {run.holon} first",
+            f"the layout of {run.holon} changed in an amendment: run coa verify "
+            f"{run.holon} first",
             code="verify-required",
         )
     product_dir = run.cfg.archive_root / run.holon
@@ -133,7 +158,9 @@ def check_product(run: Run, media_list: str | None) -> None:
         from ..archive import product as product_mod
 
         doc = product_mod.read_product(product_dir)
-        entry = next((m for m in doc["media"] if m["medium_id"] == str(run.medium)), None)
+        entry = next(
+            (m for m in doc["media"] if m["medium_id"] == str(run.medium)), None
+        )
         if entry is None:
             raise MediumRejected(
                 f"{run.medium} is not in the media list of {run.holon}: "
@@ -141,36 +168,53 @@ def check_product(run: Run, media_list: str | None) -> None:
                 code="not-in-media-list",
             )
         if entry["status"] == "archived":
-            raise MediumRejected(f"{run.holon} {run.medium} is already archived", code="already-archived")
+            raise MediumRejected(
+                f"{run.holon} {run.medium} is already archived", code="already-archived"
+            )
         if media_list:
-            raise UsageError(f"media list already declared for {run.holon}; use coa amend")
+            raise UsageError(
+                f"media list already declared for {run.holon}; use coa amend"
+            )
         return
     declared = run.state.get("declared_media_list")
     if media_list:
         parsed = [str(m) for m in validate_media_list(media_list, run.vocab)]
         if declared and parsed != declared:
-            raise UsageError(f"media list differs from the one declared earlier: {', '.join(declared)}")
+            raise UsageError(
+                f"media list differs from the one declared earlier: "
+                f"{', '.join(declared)}"
+            )
         declared = parsed
     if not declared:
-        raise UsageError(f"{run.holon} has no product manifest yet: declare its media with --media-list")
+        raise UsageError(
+            f"{run.holon} has no product manifest yet: declare its media with "
+            f"--media-list"
+        )
     if str(run.medium) not in declared:
-        raise MediumRejected(f"{run.medium} is not in the declared media list {', '.join(declared)}",
-                             code="not-in-media-list")
+        raise MediumRejected(
+            f"{run.medium} is not in the declared media list {', '.join(declared)}",
+            code="not-in-media-list",
+        )
     run.state["declared_media_list"] = declared
 
 
 def environment_preflight(cfg: Config) -> tuple[str, str]:
-    """Checks run on every invocation: tools, redumper allow-list, work root rules, free space."""
+    """Checks run on every invocation: tools, redumper allow-list, work root rules,
+    free space."""
     redumper = shutil.which(cfg.redumper_path)
     missing = [t for t in REQUIRED_TOOLS if not shutil.which(t)]
     if redumper is None:
         missing.insert(0, cfg.redumper_path)
     if missing:
-        raise EnvironmentFailure(f"missing tools on PATH: {', '.join(missing)}", code="missing-tool")
+        raise EnvironmentFailure(
+            f"missing tools on PATH: {', '.join(missing)}", code="missing-tool"
+        )
+    assert redumper is not None  # missing-tool above raises when shutil.which failed
     build = redumper_build(redumper)
     if build is None or build not in cfg.allowed_builds:
         raise EnvironmentFailure(
-            f"redumper build {build!r} is not on the allow-list {list(cfg.allowed_builds)}",
+            f"redumper build {build!r} is not on the allow-list "
+            f"{list(cfg.allowed_builds)}",
             code="redumper-not-allowed",
         )
     config_mod.check_private_folder(cfg.work_root)
@@ -178,12 +222,14 @@ def environment_preflight(cfg: Config) -> tuple[str, str]:
     free = shutil.disk_usage(cfg.work_root).free
     if free < cfg.min_free_work_bytes:
         raise EnvironmentFailure(
-            f"only {free} bytes free on the work volume, {cfg.min_free_work_bytes} required", code="low-disk-space"
+            f"only {free} bytes free on the work volume, "
+            f"{cfg.min_free_work_bytes} required",
+            code="low-disk-space",
         )
     return redumper, build
 
 
-# --- drive selection ------------------------------------------------------------------------------
+# --- drive selection --------------------------------------------------------------
 
 
 @dataclass
@@ -224,16 +270,28 @@ def select_drive(cfg: Config, drive_name: str | None, wait: float) -> Selected:
             status = macos.parse_drutil_status(xml, drive.product)
             if status is None or not status.present or status.in_transition:
                 continue
-            candidates.append(Selected(drive, location, status, _interconnect(xml, drive.product) or location.interconnect))
+            candidates.append(
+                Selected(
+                    drive,
+                    location,
+                    status,
+                    _interconnect(xml, drive.product) or location.interconnect,
+                )
+            )
         if candidates:
             for candidate in candidates:
                 if candidate.status.descriptor().family in candidate.drive.media:
                     return candidate
             return candidates[0]
         if time.monotonic() >= deadline:
-            raise MediumRejected("no medium found in any configured drive", code="no-medium")
+            raise MediumRejected(
+                "no medium found in any configured drive", code="no-medium"
+            )
         if not announced:
-            click.echo(f"waiting up to {int(wait)} s for a medium in {', '.join(d.name for d in drives)} …")
+            click.echo(
+                f"waiting up to {int(wait)} s for a medium in "
+                f"{', '.join(d.name for d in drives)} …"
+            )
             announced = True
         time.sleep(2)
 
@@ -242,9 +300,13 @@ def check_known_bad(cfg: Config, location: macos.DriveLocation, build: str) -> N
     if location.bridge is None:
         return
     for entry in cfg.known_bad:
-        if entry.bridge.upper() == location.bridge.key.upper() and build in entry.builds:
+        if (
+            entry.bridge.upper() == location.bridge.key.upper()
+            and build in entry.builds
+        ):
             raise EnvironmentFailure(
-                f"known-bad combination: bridge {location.bridge.key} with redumper {build}: {entry.reason}",
+                f"known-bad combination: bridge {location.bridge.key} with "
+                f"redumper {build}: {entry.reason}",
                 code="known-bad-combination",
             )
 
@@ -252,7 +314,8 @@ def check_known_bad(cfg: Config, location: macos.DriveLocation, build: str) -> N
 def check_firmware(selected: Selected) -> None:
     if selected.location.firmware != selected.drive.firmware:
         raise EnvironmentFailure(
-            f"drive {selected.drive.name} reports firmware {selected.location.firmware}, configured "
+            f"drive {selected.drive.name} reports firmware "
+            f"{selected.location.firmware}, configured "
             f"{selected.drive.firmware}; verify the drive and update the configuration",
             code="firmware-mismatch",
         )
@@ -261,33 +324,42 @@ def check_firmware(selected: Selected) -> None:
 def test_key(selected: Selected, build: str) -> str:
     loc = selected.location
     return drive_test_key(
-        loc.vendor, loc.product, loc.firmware, selected.interconnect, loc.bridge.key if loc.bridge else None, build
+        loc.vendor,
+        loc.product,
+        loc.firmware,
+        selected.interconnect,
+        loc.bridge.key if loc.bridge else None,
+        build,
     )
 
 
-def cached_drive_test(cfg: Config, selected: Selected, build: str) -> tuple[dict, Path]:
+def cached_drive_test(
+    cfg: Config, selected: Selected, build: str
+) -> tuple[dict[str, Any], Path]:
     key = test_key(selected, build)
     directory = drive_tests_dir(cfg.work_root)
     path = directory / f"{key}.json"
     if not path.exists():
         raise EnvironmentFailure(
-            "no drive::test result for this drive, firmware, connection and redumper build: insert a known "
-            f"error-free mixed-mode CD and run: coa drive-test --drive {selected.drive.name}",
+            "no drive::test result for this drive, firmware, connection and "
+            "redumper build: insert a known error-free mixed-mode CD and run: "
+            f"coa drive-test --drive {selected.drive.name}",
             code="drive-test-missing",
         )
-    result = json.loads(path.read_text(encoding="utf-8"))
+    result: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
     if result.get("exit_code") != 0 or (
         selected.location.vendor == "PLEXTOR" and result.get("plextor_leadin") != "yes"
     ):
         raise EnvironmentFailure(
-            f"cached drive::test failed (exit {result.get('exit_code')}, PLEXTOR lead-in: "
-            f"{result.get('plextor_leadin')}); rerun coa drive-test --drive {selected.drive.name}",
+            f"cached drive::test failed (exit {result.get('exit_code')}, "
+            f"PLEXTOR lead-in: {result.get('plextor_leadin')}); rerun "
+            f"coa drive-test --drive {selected.drive.name}",
             code="drive-test-failed",
         )
     return result, directory / f"{key}.console"
 
 
-def environment_record(selected: Selected, redumper: str, build: str) -> dict:
+def environment_record(selected: Selected, redumper: str, build: str) -> dict[str, Any]:
     loc = selected.location
     return {
         "drive_name": selected.drive.name,
@@ -296,9 +368,14 @@ def environment_record(selected: Selected, redumper: str, build: str) -> dict:
         "firmware": loc.firmware,
         "interconnect": selected.interconnect,
         "bridge": (
-            {"vendor_id": loc.bridge.vendor_id, "product_id": loc.bridge.product_id, "name": loc.bridge.name,
-             "serial": loc.bridge.serial}
-            if loc.bridge else None
+            {
+                "vendor_id": loc.bridge.vendor_id,
+                "product_id": loc.bridge.product_id,
+                "name": loc.bridge.name,
+                "serial": loc.bridge.serial,
+            }
+            if loc.bridge
+            else None
         ),
         "features": loc.features,
         "redumper_path": redumper,
@@ -309,21 +386,37 @@ def environment_record(selected: Selected, redumper: str, build: str) -> dict:
     }
 
 
-# --- identification -------------------------------------------------------------------------------
+# --- identification -------------------------------------------------------------------
 
 
-def preflight_entry(name: str, argv: list[str], run_result, record: Path, cached_at: str | None = None) -> dict:
+def preflight_entry(
+    name: str,
+    argv: list[str],
+    run_result: StageRun | dict[str, Any],
+    record: Path,
+    cached_at: str | None = None,
+) -> dict[str, Any]:
     return {
         "nn": None,
         "name": name,
         "kind": "preflight",
         "label": None,
         "argv": list(argv),
-        "command_line": run_result["command_line"] if isinstance(run_result, dict) else run_result.command_line,
-        "started_at": run_result["started_at"] if isinstance(run_result, dict) else run_result.started_at,
-        "ended_at": run_result["ended_at"] if isinstance(run_result, dict) else run_result.ended_at,
-        "exit_code": run_result["exit_code"] if isinstance(run_result, dict) else run_result.exit_code,
-        "interrupted": False if isinstance(run_result, dict) else run_result.interrupted,
+        "command_line": run_result["command_line"]
+        if isinstance(run_result, dict)
+        else run_result.command_line,
+        "started_at": run_result["started_at"]
+        if isinstance(run_result, dict)
+        else run_result.started_at,
+        "ended_at": run_result["ended_at"]
+        if isinstance(run_result, dict)
+        else run_result.ended_at,
+        "exit_code": run_result["exit_code"]
+        if isinstance(run_result, dict)
+        else run_result.exit_code,
+        "interrupted": False
+        if isinstance(run_result, dict)
+        else run_result.interrupted,
         "record": record.name,
         "cached_at": cached_at,
         "counts_after": None,
@@ -331,20 +424,32 @@ def preflight_entry(name: str, argv: list[str], run_result, record: Path, cached
     }
 
 
-def pre_dump_issue(code: str, what: str, why: str, holon: str, medium: str, values: dict | None = None) -> dict:
+def pre_dump_issue(
+    code: str,
+    what: str,
+    why: str,
+    holon: str,
+    medium: str,
+    values: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     return Issue(
         code=code,
         severity="blocking",
         title=what,
         what=what,
         why=why,
-        actions=[f"coa accept {holon} {medium} {code} --reason TEXT", f"coa discard {holon} {medium} --yes"],
+        actions=[
+            f"coa accept {holon} {medium} {code} --reason TEXT",
+            f"coa discard {holon} {medium} --yes",
+        ],
         acceptable=True,
         values=values or {},
     ).as_dict()
 
 
-def first_identification(run: Run, selected: Selected, drive_test: dict, drive_test_console: Path) -> None:
+def first_identification(
+    run: Run, selected: Selected, drive_test: dict[str, Any], drive_test_console: Path
+) -> None:
     """Record and check the medium before anything else touches it."""
     paths, state, holon, medium = run.paths, run.state, run.holon, str(run.medium)
     paths.records.mkdir(parents=True, exist_ok=True)
@@ -365,27 +470,49 @@ def first_identification(run: Run, selected: Selected, drive_test: dict, drive_t
     stages = [preflight_entry("drutil status", drutil_argv, drutil_run, drutil_record)]
     ioreg_argv = macos.ioreg_record_argv(selected.location)
     ioreg_record = paths.preflight("ioreg.txt")
-    stages.append(preflight_entry("ioreg", ioreg_argv, run_recorded(ioreg_argv, ioreg_record, echo=False), ioreg_record))
+    stages.append(
+        preflight_entry(
+            "ioreg",
+            ioreg_argv,
+            run_recorded(ioreg_argv, ioreg_record, echo=False),
+            ioreg_record,
+        )
+    )
     location = macos.find_drive(drive.vendor, drive.product)
     if location is None or location.bsd_name is None:
-        raise MediumRejected("the drive reports no medium device (no BSD name)", code="no-medium")
+        raise MediumRejected(
+            "the drive reports no medium device (no BSD name)", code="no-medium"
+        )
     selected.location = location
-    issues = []
+    issues: list[dict[str, Any]] = []
     mounts = macos.mounts_for(location.bsd_name)
     rw = [m for m in mounts if not m.read_only]
     if rw:
-        issues.append(pre_dump_issue(
-            "premounted-read-write",
-            f"the medium was mounted read-write before coa took control: "
-            f"{', '.join(f'{m.device} on {m.mountpoint} ({m.fstype})' for m in rw)}",
-            "macOS may already have written to the medium",
-            holon, medium, {"mounts": [m.__dict__ for m in rw]},
-        ))
+        mounts_text = ", ".join(
+            f"{m.device} on {m.mountpoint} ({m.fstype})" for m in rw
+        )
+        issues.append(
+            pre_dump_issue(
+                "premounted-read-write",
+                f"the medium was mounted read-write before coa took control: "
+                f"{mounts_text}",
+                "macOS may already have written to the medium",
+                holon,
+                medium,
+                {"mounts": [m.__dict__ for m in rw]},
+            )
+        )
     for mount in mounts:
         if mount.read_only:
-            click.echo(f"{mount.device} is mounted read-only on {mount.mountpoint}; redumper will unmount it")
+            click.echo(
+                f"{mount.device} is mounted read-only on {mount.mountpoint}; "
+                f"redumper will unmount it"
+            )
     if descriptor.family == "unknown":
-        raise MediumRejected(f"unreadable or unsupported medium ({descriptor.media_type})", code="unreadable-medium")
+        raise MediumRejected(
+            f"unreadable or unsupported medium ({descriptor.media_type})",
+            code="unreadable-medium",
+        )
     if descriptor.family not in drive.media:
         raise MediumRejected(
             f"{descriptor.family} media need a drive verified for {descriptor.family}; "
@@ -395,47 +522,79 @@ def first_identification(run: Run, selected: Selected, drive_test: dict, drive_t
     prefix = run.vocab.prefixes[run.medium.prefix]
     if descriptor.family not in prefix.media:
         raise MediumRejected(
-            f"prefix {prefix.name} expects {', '.join(prefix.media)} but the medium is {descriptor.family}",
+            f"prefix {prefix.name} expects {', '.join(prefix.media)} but the "
+            f"medium is {descriptor.family}",
             code="prefix-mismatch",
         )
     profile = profiles.match_profile(descriptor, prefix.name)
     if profile is None:
-        raise MediumRejected(f"no acquisition profile for {descriptor.family} media", code="no-profile")
+        raise MediumRejected(
+            f"no acquisition profile for {descriptor.family} media", code="no-profile"
+        )
     approved = profile.approved(run.cfg.approved_profiles)
     tool = f"redumper {run.build}"
     drive_text = f"{location.vendor} {location.product} {location.firmware}"
-    gaps = []
+    gaps: list[dict[str, Any]] = []
     if not approved:
-        issues.append(pre_dump_issue(
-            "provisional-capture",
-            f"no approved acquisition profile: {profile.key} is {profile.status}; the archive will be provisional",
-            "only media captured with an approved profile become permanent archives",
-            holon, medium, {"profile": profile.key, "status": profile.status},
-        ))
-        gaps.append({
-            "description": (
-                f"no approved acquisition profile covers {descriptor.media_type}, {descriptor.sessions} session(s), "
-                f"data tracks: {'yes' if descriptor.data_tracks else 'no'}, disc status {descriptor.disc_status}"
-            ),
-            "cause": f"{profile.name} {profile.version} ({profile.status})",
-            "tool": tool,
-            "drive": drive_text,
-        })
+        issues.append(
+            pre_dump_issue(
+                "provisional-capture",
+                f"no approved acquisition profile: {profile.key} is "
+                f"{profile.status}; the archive will be provisional",
+                "only media captured with an approved profile become permanent "
+                "archives",
+                holon,
+                medium,
+                {"profile": profile.key, "status": profile.status},
+            )
+        )
+        gaps.append(
+            {
+                "description": (
+                    f"no approved acquisition profile covers {descriptor.media_type}, "
+                    f"{descriptor.sessions} session(s), "
+                    f"data tracks: {'yes' if descriptor.data_tracks else 'no'}, "
+                    f"disc status {descriptor.disc_status}"
+                ),
+                "cause": f"{profile.name} {profile.version} ({profile.status})",
+                "tool": tool,
+                "drive": drive_text,
+            }
+        )
     if prefix.partial:
-        gaps.append({"description": prefix.partial_reason, "cause": f"medium ID prefix {prefix.name}",
-                     "tool": tool, "drive": drive_text})
-    for session in range(2, descriptor.sessions + 1):
-        gaps.append({
+        gaps.append(
+            {
+                "description": prefix.partial_reason,
+                "cause": f"medium ID prefix {prefix.name}",
+                "tool": tool,
+                "drive": drive_text,
+            }
+        )
+    gaps.extend(
+        {
             "description": f"session {session} lead-in not captured",
             "cause": "redumper b753 PLEXTOR lead-in reader stops after session 1",
             "tool": tool,
             "drive": drive_text,
-        })
+        }
+        for session in range(2, descriptor.sessions + 1)
+    )
     console_record = paths.preflight("drive-test.console")
     shutil.copyfile(drive_test_console, console_record)
     console_record.chmod(0o444)
-    stages.append(preflight_entry("drive::test", drive_test["argv"], drive_test, console_record, cached_at=drive_test["ended_at"]))
-    state["environment"]["drive_test"] = {"record": console_record.name, "plextor_leadin": drive_test.get("plextor_leadin")}
+    stages.append(
+        preflight_entry(
+            "drive::test",
+            drive_test["argv"],
+            drive_test,
+            console_record,
+            cached_at=drive_test["ended_at"],
+        )
+    )
+    state["environment"]["drive_test"] = {
+        "record": console_record.name,
+        "plextor_leadin": drive_test.get("plextor_leadin"),
+    }
     state["medium"] = descriptor.as_dict()
     state["prefix"] = prefix.name
     state["profile"] = {
@@ -461,21 +620,37 @@ def check_resume(run: Run, selected: Selected) -> None:
         raise MediumRejected("blank medium", code="blank-medium")
     recorded = state["medium"]
     tracks_now = [(t.number, t.session, t.start, t.size) for t in status.tracks]
-    tracks_then = [(t["number"], t["session"], t["start"], t["size"]) for t in recorded["tracks"]]
-    if (descriptor.media_type, descriptor.sessions, tracks_now) != (recorded["media_type"], recorded["sessions"], tracks_then):
+    tracks_then = [
+        (t["number"], t["session"], t["start"], t["size"]) for t in recorded["tracks"]
+    ]
+    if (descriptor.media_type, descriptor.sessions, tracks_now) != (
+        recorded["media_type"],
+        recorded["sessions"],
+        tracks_then,
+    ):
         raise MediumRejected(
-            f"the medium in the drive is not the one recorded for {run.image} (type, sessions or track layout differ)",
+            f"the medium in the drive is not the one recorded for {run.image} "
+            f"(type, sessions or track layout differ)",
             code="medium-changed",
         )
     env = state["environment"]
     loc = selected.location
     bridge_now = loc.bridge.key if loc.bridge else None
-    bridge_then = f"{env['bridge']['vendor_id']}:{env['bridge']['product_id']}" if env["bridge"] else None
+    bridge_then = (
+        f"{env['bridge']['vendor_id']}:{env['bridge']['product_id']}"
+        if env["bridge"]
+        else None
+    )
     if (loc.vendor, loc.product, loc.firmware, bridge_now, run.build) != (
-        env["vendor"], env["product"], env["firmware"], bridge_then, env["build"]
+        env["vendor"],
+        env["product"],
+        env["firmware"],
+        bridge_then,
+        env["build"],
     ):
         raise EnvironmentFailure(
-            "drive, firmware, connection or redumper build differ from the recorded acquisition environment",
+            "drive, firmware, connection or redumper build differ from the "
+            "recorded acquisition environment",
             code="environment-changed",
         )
     if loc.bsd_name:
@@ -486,16 +661,38 @@ def check_resume(run: Run, selected: Selected) -> None:
                 "premounted-read-write",
                 f"the medium is mounted read-write: {', '.join(m.device for m in rw)}",
                 "macOS may already have written to the medium",
-                run.holon, str(run.medium),
+                run.holon,
+                str(run.medium),
             )
-            if all(i["code"] != "premounted-read-write" for i in state["pre_dump_issues"]):
+            if all(
+                i["code"] != "premounted-read-write" for i in state["pre_dump_issues"]
+            ):
                 state["pre_dump_issues"].append(issue)
     plan = state["profile"]["stages"]
-    stage = plan[state["plan_index"]]["command"] if state["plan_index"] < len(plan) else None
+    stage = (
+        plan[state["plan_index"]]["command"]
+        if state["plan_index"] < len(plan)
+        else None
+    )
     last = next_nn(state) - 1
-    failed = next((s for s in reversed(state["stages"]) if s["nn"] == last), None) if last else None
-    reason = "repeat failed or interrupted stage" if failed and (failed["exit_code"] or failed["interrupted"]) else "resume"
-    state["resumes"].append({"resumed_at": utc_now(), "stage": stage, "previous_nn": last or None, "reason": reason})
+    failed = (
+        next((s for s in reversed(state["stages"]) if s["nn"] == last), None)
+        if last
+        else None
+    )
+    reason = (
+        "repeat failed or interrupted stage"
+        if failed and (failed["exit_code"] or failed["interrupted"])
+        else "resume"
+    )
+    state["resumes"].append(
+        {
+            "resumed_at": utc_now(),
+            "stage": stage,
+            "previous_nn": last or None,
+            "reason": reason,
+        }
+    )
 
 
 def stop_on_pre_dump_issues(run: Run) -> None:
@@ -509,10 +706,10 @@ def stop_on_pre_dump_issues(run: Run) -> None:
         raise Stop(EXIT_FAIL)
 
 
-# --- stages ---------------------------------------------------------------------------------------
+# --- stages ---------------------------------------------------------------------------
 
 
-def counts_dict(counts: rawdata.Counts | None) -> dict | None:
+def counts_dict(counts: rawdata.Counts | None) -> dict[str, Any] | None:
     if counts is None:
         return None
     return {
@@ -524,43 +721,85 @@ def counts_dict(counts: rawdata.Counts | None) -> dict | None:
     }
 
 
-def compute_counts(run: Run) -> dict | None:
+def compute_counts(run: Run) -> dict[str, Any] | None:
     env = run.state["environment"]
     state_file = run.paths.dump / f"{run.image}.state"
     subcode = run.paths.dump / f"{run.image}.subcode"
-    if not (state_file.exists() and subcode.exists()) or env["pregap_start"] is None or run.state["leadout_lba"] is None:
+    if (
+        not (state_file.exists() and subcode.exists())
+        or env["pregap_start"] is None
+        or run.state["leadout_lba"] is None
+    ):
         return None
     return counts_dict(
-        rawdata.count_errors(state_file, subcode, env["pregap_start"], env["read_offset"], run.state["leadout_lba"])
+        rawdata.count_errors(
+            state_file,
+            subcode,
+            env["pregap_start"],
+            env["read_offset"],
+            run.state["leadout_lba"],
+        )
     )
 
 
-def check(id_: str, ok: bool, values: dict, note: str = "", origin: str = "acquisition") -> dict:
-    return {"id": id_, "origin": origin, "status": "pass" if ok else "fail", "values": values, "note": note}
+def check(
+    id_: str,
+    ok: bool,
+    values: dict[str, Any],
+    note: str = "",
+    origin: str = "acquisition",
+) -> dict[str, Any]:
+    return {
+        "id": id_,
+        "origin": origin,
+        "status": "pass" if ok else "fail",
+        "values": values,
+        "note": note,
+    }
 
 
-def previous_counts(state: dict) -> dict | None:
+def previous_counts(state: dict[str, Any]) -> dict[str, Any] | None:
     for entry in reversed(state["stages"]):
         if entry["kind"] == "acquisition" and entry.get("counts_after") is not None:
-            return entry["counts_after"]
+            counts: dict[str, Any] = entry["counts_after"]
+            return counts
     return None
 
 
-def run_stage(run: Run, command: str, label: str | None, options: list[str], resume_reason: str | None = None) -> dict:
-    """Run one acquisition stage and record it; raises Stop when acquisition cannot continue."""
+def run_stage(
+    run: Run,
+    command: str,
+    label: str | None,
+    options: list[str],
+) -> dict[str, Any]:
+    """Run one acquisition stage and record it; raises Stop when acquisition cannot
+    continue."""
     state, paths = run.state, run.paths
     nn = next_nn(state)
     options = list(options)
     if command == "dump" and (paths.dump / f"{run.image}.state").exists():
         options.append("--overwrite")
-        state["resumes"].append({"resumed_at": utc_now(), "stage": "dump", "previous_nn": nn - 1,
-                                 "reason": "repeat interrupted dump"})
+        state["resumes"].append(
+            {
+                "resumed_at": utc_now(),
+                "stage": "dump",
+                "previous_nn": nn - 1,
+                "reason": "repeat interrupted dump",
+            }
+        )
     argv = build_argv(
-        run.redumper, command, image_path=paths.dump, image_name=run.image,
-        drive_bsd=run.location.bsd_name, options=options,
+        run.redumper,
+        command,
+        image_path=paths.dump,
+        image_name=run.image,
+        drive_bsd=run.location.bsd_name,  # type: ignore[union-attr]  # set earlier
+        options=options,
     )
     record = paths.stage_record(nn, command)
-    click.echo(f"--- stage {nn:02d}: {command}{f' ({label})' if label else ''}: {' '.join(argv)}")
+    click.echo(
+        f"--- stage {nn:02d}: {command}{f' ({label})' if label else ''}: "
+        f"{' '.join(argv)}"
+    )
     before = previous_counts(state)
     result = run_recorded(argv, record, cwd=paths.dump)
     lines = console.clean(record.read_bytes())
@@ -597,17 +836,33 @@ def run_stage(run: Run, command: str, label: str | None, options: list[str], res
         entry["reported"] = counts_dict(console.parse_correction(body))
     entry["counts_after"] = compute_counts(run)
     classified = run.catalog.classify(record.name, lines)
-    state["log_messages"] = [m for m in state["log_messages"] if m["record"] != record.name] + [
-        {"record": c.record, "line": c.line, "class": c.cls, "code": c.code} for c in classified
+    state["log_messages"] = [
+        m for m in state["log_messages"] if m["record"] != record.name
+    ] + [
+        {"record": c.record, "line": c.line, "class": c.cls, "code": c.code}
+        for c in classified
     ]
     failed = result.exit_code != 0 or result.interrupted
     if not failed:
         add_count_checks(run, entry, before)
     if command == "dump" and not failed:
         set_first_pass(run, entry)
-    hard = [catalog_issue(c, run.holon, str(run.medium)) for c in classified if c.cls == "blocking" and not c.acceptable]
+    hard = [
+        catalog_issue(c, run.holon, str(run.medium))
+        for c in classified
+        if c.cls == "blocking" and not c.acceptable
+    ]
     if failed:
-        hard.append(stage_failed_issue(run.holon, str(run.medium), command, nn, result.exit_code, result.interrupted))
+        hard.append(
+            stage_failed_issue(
+                run.holon,
+                str(run.medium),
+                command,
+                nn,
+                result.exit_code,
+                result.interrupted,
+            )
+        )
     if hard:
         state["issues"] = [i.as_dict() | {"accepted": False} for i in hard]
         state["phase"] = "blocked"
@@ -619,40 +874,81 @@ def run_stage(run: Run, command: str, label: str | None, options: list[str], res
     return entry
 
 
-def add_count_checks(run: Run, entry: dict, before: dict | None) -> None:
-    """Redumper's reported counts must equal the counts recomputed from .state/.subcode."""
+def add_count_checks(
+    run: Run, entry: dict[str, Any], before: dict[str, Any] | None
+) -> None:
+    """Redumper's reported counts must equal the counts recomputed from
+    .state/.subcode."""
     after, reported = entry["counts_after"], entry["reported"]
     checks = run.state["acquisition_checks"]
     fields = ("scsi_samples", "c2_samples", "q_sectors")
     if entry["name"] == "dump":
         if after is None or reported is None:
-            checks.append({"id": "dump-counts", "origin": "acquisition", "status": "skip",
-                           "values": {"reported": reported, "computed": after}, "note": "counts unavailable"})
+            checks.append(
+                {
+                    "id": "dump-counts",
+                    "origin": "acquisition",
+                    "status": "skip",
+                    "values": {"reported": reported, "computed": after},
+                    "note": "counts unavailable",
+                }
+            )
             return
         ok = all(reported[f] == after[f] for f in fields)
-        checks.append(check("dump-counts", ok, {"reported": reported, "computed": after},
-                            "dump media errors vs counts recomputed from .state/.subcode"))
+        checks.append(
+            check(
+                "dump-counts",
+                ok,
+                {"reported": reported, "computed": after},
+                "dump media errors vs counts recomputed from .state/.subcode",
+            )
+        )
     elif entry["name"] == "refine":
         cid = f"refine-counts-{entry['nn']:02d}"
         if after is None or reported is None or before is None:
-            checks.append({"id": cid, "origin": "acquisition", "status": "skip",
-                           "values": {"reported": reported, "before": before, "after": after},
-                           "note": "counts unavailable"})
+            checks.append(
+                {
+                    "id": cid,
+                    "origin": "acquisition",
+                    "status": "skip",
+                    "values": {"reported": reported, "before": before, "after": after},
+                    "note": "counts unavailable",
+                }
+            )
             return
         corrected = {f: before[f] - after[f] for f in fields}
         ok = all(corrected[f] == reported[f] for f in fields)
-        checks.append(check(cid, ok, {"reported": reported, "before": before, "after": after, "corrected": corrected},
-                            "refine correction statistics vs before/after counts from .state/.subcode"))
+        checks.append(
+            check(
+                cid,
+                ok,
+                {
+                    "reported": reported,
+                    "before": before,
+                    "after": after,
+                    "corrected": corrected,
+                },
+                "refine correction statistics vs before/after counts from "
+                ".state/.subcode",
+            )
+        )
 
 
-def set_first_pass(run: Run, entry: dict) -> None:
+def set_first_pass(run: Run, entry: dict[str, Any]) -> None:
     state = run.state
     reported, after = entry["reported"] or {}, entry["counts_after"] or {}
     program_sectors = None
-    if state["leadout_lba"] is not None and state["environment"]["pregap_start"] is not None:
+    if (
+        state["leadout_lba"] is not None
+        and state["environment"]["pregap_start"] is not None
+    ):
         program_sectors = state["leadout_lba"] - state["environment"]["pregap_start"]
     q_program = after.get("q_program_sectors")
-    rate = q_program / program_sectors if q_program is not None and program_sectors else None
+    rate = (
+        q_program / program_sectors
+        if q_program is not None and program_sectors
+        else None
+    )
     state["first_pass"] = {
         "scsi_samples": reported.get("scsi_samples"),
         "c2_samples": reported.get("c2_samples"),
@@ -666,17 +962,22 @@ def set_first_pass(run: Run, entry: dict) -> None:
     threshold = run.cfg.q_rate_threshold
     if medium["recordable"] or medium["rewritable"]:
         enabled, reason = True, "recordable or rewritable medium"
-    elif (reported.get("scsi_samples") or 0) > 0 or (reported.get("c2_samples") or 0) > 0:
+    elif (reported.get("scsi_samples") or 0) > 0 or (
+        reported.get("c2_samples") or 0
+    ) > 0:
         enabled, reason = True, "SCSI or C2 errors in the first dump pass"
     elif rate is not None and rate > threshold:
-        enabled, reason = True, f"first-pass program-area Q error rate {rate:.4%} above {threshold:.4%}"
+        enabled, reason = (
+            True,
+            f"first-pass program-area Q error rate {rate:.4%} above {threshold:.4%}",
+        )
     else:
         enabled, reason = False, "pressed medium without first-pass read problems"
     state["redundancy"]["default_enabled"] = enabled
     state["redundancy"]["default_reason"] = reason
 
 
-def stage_should_run(state: dict, stage: dict) -> bool:
+def stage_should_run(state: dict[str, Any], stage: dict[str, Any]) -> bool:
     if stage.get("when") == "c2_or_scsi_remaining":
         counts = previous_counts(state)
         return counts is None or counts["scsi_samples"] > 0 or counts["c2_samples"] > 0
@@ -690,11 +991,21 @@ def run_acquisition(run: Run) -> None:
     while state["plan_index"] < len(plan):
         stage = plan[state["plan_index"]]
         if stage_should_run(state, stage):
-            run_stage(run, stage["command"], stage.get("label"), stage.get("options", []))
+            run_stage(
+                run, stage["command"], stage.get("label"), stage.get("options", [])
+            )
         else:
-            state["skipped_stages"].append({"command": stage["command"], "label": stage.get("label"),
-                                            "reason": "no SCSI or C2 errors remaining"})
-            click.echo(f"--- skipping {stage['command']} ({stage.get('label')}): no SCSI or C2 errors remaining")
+            state["skipped_stages"].append(
+                {
+                    "command": stage["command"],
+                    "label": stage.get("label"),
+                    "reason": "no SCSI or C2 errors remaining",
+                }
+            )
+            click.echo(
+                f"--- skipping {stage['command']} ({stage.get('label')}): no "
+                f"SCSI or C2 errors remaining"
+            )
         state["plan_index"] += 1
         run.save()
     finish_acquisition(run)
@@ -710,7 +1021,7 @@ def finish_acquisition(run: Run) -> None:
     run.save()
 
 
-# --- top-level commands ---------------------------------------------------------------------------
+# --- top-level commands ---------------------------------------------------------------
 
 
 def _lock_work(run: Run) -> None:
@@ -722,15 +1033,26 @@ def _lock_work(run: Run) -> None:
 def _take_drive(run: Run, drive_name: str | None, wait: float) -> Selected:
     cfg, state = run.cfg, run.state
     run.exit_stack.enter_context(macos.MountGuard(macos.drive_predicate(cfg.drives)))
-    if state.get("environment") and drive_name and drive_name != state["environment"]["drive_name"]:
-        raise UsageError(f"{run.image} is being acquired with drive {state['environment']['drive_name']}")
+    if (
+        state.get("environment")
+        and drive_name
+        and drive_name != state["environment"]["drive_name"]
+    ):
+        raise UsageError(
+            f"{run.image} is being acquired with drive "
+            f"{state['environment']['drive_name']}"
+        )
     if state.get("environment"):
         drive_name = state["environment"]["drive_name"]
     selected = select_drive(cfg, drive_name, wait)
     check_known_bad(cfg, selected.location, run.build)
     check_firmware(selected)
     loc = selected.location
-    run.exit_stack.enter_context(macos.FileLock(drive_lock_path(cfg.work_root, loc.vendor, loc.product, loc.firmware)))
+    run.exit_stack.enter_context(
+        macos.FileLock(
+            drive_lock_path(cfg.work_root, loc.vendor, loc.product, loc.firmware)
+        )
+    )
     run.drive = selected.drive
     run.location = selected.location
     return selected
@@ -741,12 +1063,23 @@ def _apply_redundancy(run: Run, redundancy: str | None, reason: str | None) -> N
         return
     if not reason:
         raise UsageError("--redundancy needs --redundancy-reason")
-    run.state["redundancy"]["override"] = {"value": redundancy == "on", "reason": reason}
+    run.state["redundancy"]["override"] = {
+        "value": redundancy == "on",
+        "reason": reason,
+    }
 
 
-def archive(cfg: Config, holon_text: str, medium_text: str, *, media_list: str | None = None,
-            drive_name: str | None = None, wait: float = 300, redundancy: str | None = None,
-            redundancy_reason: str | None = None) -> int:
+def archive(
+    cfg: Config,
+    holon_text: str,
+    medium_text: str,
+    *,
+    media_list: str | None = None,
+    drive_name: str | None = None,
+    wait: float = 300,
+    redundancy: str | None = None,
+    redundancy_reason: str | None = None,
+) -> int:
     run = open_run(cfg, holon_text, medium_text)
     with run.exit_stack:
         _lock_work(run)
@@ -758,12 +1091,19 @@ def archive(cfg: Config, holon_text: str, medium_text: str, *, media_list: str |
             if not run.state["acquisition_complete"]:
                 selected = _take_drive(run, drive_name, wait)
                 if fresh:
-                    drive_test, drive_test_console = cached_drive_test(cfg, selected, run.build)
-                    run.state["environment"] = environment_record(selected, run.redumper, run.build)
+                    drive_test, drive_test_console = cached_drive_test(
+                        cfg, selected, run.build
+                    )
+                    run.state["environment"] = environment_record(
+                        selected, run.redumper, run.build
+                    )
                     first_identification(run, selected, drive_test, drive_test_console)
                 else:
                     check_resume(run, selected)
-                    run.location = macos.find_drive(selected.drive.vendor, selected.drive.product) or selected.location
+                    run.location = (
+                        macos.find_drive(selected.drive.vendor, selected.drive.product)
+                        or selected.location
+                    )
                 run.save()
                 stop_on_pre_dump_issues(run)
                 run_acquisition(run)
@@ -781,21 +1121,34 @@ def archive(cfg: Config, holon_text: str, medium_text: str, *, media_list: str |
         return verify_analyse_publish(run)
 
 
-def refine(cfg: Config, holon_text: str, medium_text: str, *, retries: int, speed: float | None = None,
-           refine_subchannel: bool = False) -> int:
+def refine(
+    cfg: Config,
+    holon_text: str,
+    medium_text: str,
+    *,
+    retries: int,
+    speed: float | None = None,
+    refine_subchannel: bool = False,
+) -> int:
     run = open_run(cfg, holon_text, medium_text)
     with run.exit_stack:
         _lock_work(run)
         state = run.state
         if not state.get("acquisition_complete"):
-            raise UsageError(f"acquisition of {run.image} is not complete: run coa archive {run.holon} {run.medium}")
+            raise UsageError(
+                f"acquisition of {run.image} is not complete: run coa archive "
+                f"{run.holon} {run.medium}"
+            )
         if state["phase"] in ("publishing", "published"):
             raise UsageError(f"{run.image} is already being published")
         check_product(run, None)
         run.redumper, run.build = environment_preflight(cfg)
         selected = _take_drive(run, None, 0)
         check_resume(run, selected)
-        run.location = macos.find_drive(selected.drive.vendor, selected.drive.product) or selected.location
+        run.location = (
+            macos.find_drive(selected.drive.vendor, selected.drive.product)
+            or selected.location
+        )
         options = [f"--retries={retries}"]
         if speed is not None:
             options.append(f"--speed={speed:g}")
@@ -807,14 +1160,18 @@ def refine(cfg: Config, holon_text: str, medium_text: str, *, retries: int, spee
         except Stop as stop:
             return stop.exit_code
         finally:
-            set_read_only(run.paths.dump, True)  # never leave the acquired raw files writable
+            set_read_only(
+                run.paths.dump, True
+            )  # never leave the acquired raw files writable
         finish_acquisition(run)
         from .publication import verify_analyse_publish
 
         return verify_analyse_publish(run)
 
 
-def accept(cfg: Config, holon_text: str, medium_text: str, code: str, reason: str) -> int:
+def accept(
+    cfg: Config, holon_text: str, medium_text: str, code: str, reason: str
+) -> int:
     run = open_run(cfg, holon_text, medium_text)
     with run.exit_stack:
         if not run.paths.state_file.exists():
@@ -825,15 +1182,27 @@ def accept(cfg: Config, holon_text: str, medium_text: str, code: str, reason: st
             raise UsageError("an acceptance needs a non-empty --reason")
         accepted = {a["code"] for a in state["acceptances"]}
         open_issues = [
-            i for i in state["issues"] + state["pre_dump_issues"]
-            if i["severity"] == "blocking" and i["acceptable"] and i["code"] not in accepted
+            i
+            for i in state["issues"] + state["pre_dump_issues"]
+            if i["severity"] == "blocking"
+            and i["acceptable"]
+            and i["code"] not in accepted
         ]
         match = next((i for i in open_issues if i["code"] == code), None)
         if match is None:
             codes = ", ".join(sorted({i["code"] for i in open_issues})) or "none"
-            raise UsageError(f"{code} is not an open acceptable issue of {run.image}; open acceptable issues: {codes}")
-        state["acceptances"].append({"code": code, "title": match["title"], "accepted_at": utc_now(),
-                                     "reason": reason.strip()})
+            raise UsageError(
+                f"{code} is not an open acceptable issue of {run.image}; open "
+                f"acceptable issues: {codes}"
+            )
+        state["acceptances"].append(
+            {
+                "code": code,
+                "title": match["title"],
+                "accepted_at": utc_now(),
+                "reason": reason.strip(),
+            }
+        )
         if code == "split-refused":
             state["force_split"] = True
             state["verification_needed"] = True
@@ -850,16 +1219,22 @@ def discard(cfg: Config, holon_text: str, medium_text: str, *, yes: bool) -> int
     with run.exit_stack:
         _lock_work(run)
         if run.state.get("phase") == "publishing":
-            raise UsageError(f"{run.image} is being published: run coa recover {run.holon} first")
+            raise UsageError(
+                f"{run.image} is being published: run coa recover {run.holon} first"
+            )
         if not yes:
             if sys.stdin is None or not sys.stdin.isatty():
-                raise UsageError(f"discard of {run.image} needs --yes when stdin is not a terminal")
+                raise UsageError(
+                    f"discard of {run.image} needs --yes when stdin is not a terminal"
+                )
             try:
-                confirmed = click.confirm(f"Delete the work directory {run.paths.root}?")
+                confirmed = click.confirm(
+                    f"Delete the work directory {run.paths.root}?"
+                )
             except click.Abort:  # Ctrl-C / Ctrl-D at the prompt
                 confirmed = False
             if not confirmed:
-                raise UsageError(f"discard of {run.image} cancelled; nothing deleted")
+                raise UsageError(f"discard of {run.image} canceled; nothing deleted")
         make_tree_writable(run.paths.root)
         shutil.rmtree(run.paths.root)
     click.echo(f"discarded {run.paths.root}")
@@ -874,15 +1249,24 @@ def drive_test(cfg: Config, drive_name: str | None = None, wait: float = 300) ->
         check_known_bad(cfg, selected.location, build)
         check_firmware(selected)
         loc = selected.location
-        stack.enter_context(macos.FileLock(drive_lock_path(cfg.work_root, loc.vendor, loc.product, loc.firmware)))
+        stack.enter_context(
+            macos.FileLock(
+                drive_lock_path(cfg.work_root, loc.vendor, loc.product, loc.firmware)
+            )
+        )
         if selected.status.descriptor().blank:
-            raise MediumRejected("blank medium: drive::test needs an error-free mixed-mode CD", code="blank-medium")
+            raise MediumRejected(
+                "blank medium: drive::test needs an error-free mixed-mode CD",
+                code="blank-medium",
+            )
         location = macos.find_drive(loc.vendor, loc.product)
         if location is None or location.bsd_name is None:
             raise MediumRejected("the drive reports no medium device", code="no-medium")
         if any(not m.read_only for m in macos.mounts_for(location.bsd_name)):
-            raise MediumRejected("the medium is mounted read-write; eject it and use another disc",
-                                 code="premounted-read-write")
+            raise MediumRejected(
+                "the medium is mounted read-write; eject it and use another disc",
+                code="premounted-read-write",
+            )
         key = test_key(selected, build)
         directory = drive_tests_dir(cfg.work_root)
         directory.mkdir(parents=True, exist_ok=True)
@@ -891,24 +1275,37 @@ def drive_test(cfg: Config, drive_name: str | None = None, wait: float = 300) ->
             if old.exists():
                 old.chmod(0o644)
                 old.unlink()
-        argv = build_argv(redumper, "drive::test", image_path=directory, image_name=key, drive_bsd=location.bsd_name)
+        argv = build_argv(
+            redumper,
+            "drive::test",
+            image_path=directory,
+            image_name=key,
+            drive_bsd=location.bsd_name,
+        )
         result = run_recorded(argv, directory / f"{key}.console", cwd=directory)
-        leadin = console.parse_drive_test(console.clean((directory / f"{key}.console").read_bytes()))
-        atomic_write_json(directory / f"{key}.json", {
-            "vendor": loc.vendor,
-            "product": loc.product,
-            "firmware": loc.firmware,
-            "interconnect": selected.interconnect,
-            "bridge": loc.bridge.key if loc.bridge else None,
-            "build": build,
-            "argv": result.argv,
-            "command_line": result.command_line,
-            "started_at": result.started_at,
-            "ended_at": result.ended_at,
-            "exit_code": result.exit_code,
-            "plextor_leadin": leadin,
-        })
+        leadin = console.parse_drive_test(
+            console.clean((directory / f"{key}.console").read_bytes())
+        )
+        atomic_write_json(
+            directory / f"{key}.json",
+            {
+                "vendor": loc.vendor,
+                "product": loc.product,
+                "firmware": loc.firmware,
+                "interconnect": selected.interconnect,
+                "bridge": loc.bridge.key if loc.bridge else None,
+                "build": build,
+                "argv": result.argv,
+                "command_line": result.command_line,
+                "started_at": result.started_at,
+                "ended_at": result.ended_at,
+                "exit_code": result.exit_code,
+                "plextor_leadin": leadin,
+            },
+        )
         ok = result.exit_code == 0 and (loc.vendor != "PLEXTOR" or leadin == "yes")
-        click.echo(f"drive::test {'passed' if ok else 'FAILED'} (exit {result.exit_code}, PLEXTOR lead-in: {leadin})")
+        click.echo(
+            f"drive::test {'passed' if ok else 'FAILED'} (exit {result.exit_code}, "
+            f"PLEXTOR lead-in: {leadin})"
+        )
         return 0 if ok else 22
-

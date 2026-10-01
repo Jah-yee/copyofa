@@ -6,6 +6,7 @@ import os
 import stat
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from ..util import atomic_write_json, sha256_file, utc_now
 
@@ -56,7 +57,10 @@ class WorkPaths:
         return self.root / f"verify-{nn:02d}"
 
     def stage_record(self, nn: int, command: str) -> Path:
-        return self.records / f"{self.image}.stage-{nn:02d}-{RECORD_STAGE_NAMES[command]}.console"
+        return (
+            self.records
+            / f"{self.image}.stage-{nn:02d}-{RECORD_STAGE_NAMES[command]}.console"
+        )
 
     def verify_log(self, nn: int) -> Path:
         return self.records / f"{self.image}.verify-{nn:02d}.log"
@@ -70,7 +74,14 @@ def drive_lock_path(work_root: Path, vendor: str, product: str, firmware: str) -
     return work_root / ".locks" / f"drive-{vendor}_{product_key}_{firmware}.lock"
 
 
-def drive_test_key(vendor: str, product: str, firmware: str, interconnect: str, bridge: str | None, build: str) -> str:
+def drive_test_key(
+    vendor: str,
+    product: str,
+    firmware: str,
+    interconnect: str,
+    bridge: str | None,
+    build: str,
+) -> str:
     text = f"{vendor}|{product}|{firmware}|{interconnect}|{bridge or 'none'}|{build}"
     return hashlib.sha1(text.encode("utf-8")).hexdigest()[:16]
 
@@ -89,7 +100,7 @@ def scratch_root(work_root: Path) -> Path:
     return path
 
 
-def new_state(holon: str, medium: str) -> dict:
+def new_state(holon: str, medium: str) -> dict[str, Any]:
     return {
         "state_version": STATE_VERSION,
         "holon_id": holon,
@@ -108,7 +119,11 @@ def new_state(holon: str, medium: str) -> dict:
         "resumes": [],
         "first_pass": None,
         "leadout_lba": None,
-        "redundancy": {"default_enabled": None, "default_reason": None, "override": None},
+        "redundancy": {
+            "default_enabled": None,
+            "default_reason": None,
+            "override": None,
+        },
         "raw_snapshot": {},
         "acquisition_complete": False,
         "verification_needed": False,
@@ -122,24 +137,29 @@ def new_state(holon: str, medium: str) -> dict:
     }
 
 
-def load_state(paths: WorkPaths) -> dict | None:
+def load_state(paths: WorkPaths) -> dict[str, Any] | None:
     if not paths.state_file.exists():
         return None
-    state = json.loads(paths.state_file.read_text(encoding="utf-8"))
+    state: dict[str, Any] = json.loads(paths.state_file.read_text(encoding="utf-8"))
     if state.get("state_version") != STATE_VERSION:
-        raise RuntimeError(f"{paths.state_file}: unsupported state version {state.get('state_version')}")
+        raise RuntimeError(
+            f"{paths.state_file}: unsupported state version "
+            f"{state.get('state_version')}"
+        )
     return state
 
 
-def save_state(paths: WorkPaths, state: dict) -> None:
+def save_state(paths: WorkPaths, state: dict[str, Any]) -> None:
     atomic_write_json(paths.state_file, state)
 
 
-def next_nn(state: dict) -> int:
-    return 1 + max((s["nn"] for s in state["stages"] if s.get("nn") is not None), default=0)
+def next_nn(state: dict[str, Any]) -> int:
+    return 1 + max(
+        (s["nn"] for s in state["stages"] if s.get("nn") is not None), default=0
+    )
 
 
-def snapshot(directory: Path) -> dict:
+def snapshot(directory: Path) -> dict[str, Any]:
     return {
         path.name: {"size": path.stat().st_size, "sha256": sha256_file(path)}
         for path in sorted(directory.iterdir())
@@ -150,26 +170,28 @@ def snapshot(directory: Path) -> dict:
 def set_read_only(directory: Path, read_only: bool) -> None:
     for path in directory.iterdir():
         if path.is_file() and not path.is_symlink():
-            os.chmod(path, 0o444 if read_only else 0o644)
+            path.chmod(0o444 if read_only else 0o644)
 
 
 def make_tree_writable(root: Path) -> None:
-    for dirpath, dirnames, filenames in os.walk(root):
-        os.chmod(dirpath, 0o755)
+    for dirpath, _dirnames, filenames in os.walk(root):
+        Path(dirpath).chmod(0o755)
         for name in filenames:
             path = Path(dirpath) / name
             if not path.is_symlink():
-                os.chmod(path, path.stat().st_mode | stat.S_IWUSR)
+                path.chmod(path.stat().st_mode | stat.S_IWUSR)
 
 
 LOCKED_SCRATCH_PREFIXES = ("reprocess", "repair", "staged")
 
 
 def remove_stale_scratch(work_root: Path, holon: str) -> list[str]:
-    """Delete scratch dirs left by killed reprocess/repair/staged-verification runs of a product.
+    """Delete scratch dirs left by killed reprocess/repair/staged-verification runs
+    of a product.
 
-    These are only created while holding the product lock, so with the lock held none of them is live.
-    (`coa verify --deep` runs without the lock and uses a different prefix; its dirs are never touched here.)
+    These are only created while holding the product lock, so with the lock held
+    none of them is live. (`coa verify --deep` runs without the lock and uses a
+    different prefix; its dirs are never touched here.)
     """
     import shutil
 

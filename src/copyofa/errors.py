@@ -33,7 +33,3 @@ class EnvironmentFailure(CoaError):
 
 class IntegrityFailure(CoaError):
     exit_code = EXIT_INTEGRITY
-
-
-class UncommittedState(CoaError):
-    exit_code = EXIT_UNCOMMITTED

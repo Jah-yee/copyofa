@@ -1,7 +1,8 @@
 """Raw-data analysis of redumper .scram/.state/.subcode files.
 
-Layout (redumper b753, CD): index 0 of .scram/.state/.subcode is LBA -45150; 588 stereo samples per sector;
-.state holds one status byte per sample; .subcode holds 96 bytes per sector (P-W interleaved, Q = bit 6).
+Layout (redumper b753, CD): index 0 of .scram/.state/.subcode is LBA -45150; 588 stereo
+samples per sector; .state holds one status byte per sample; .subcode holds 96 bytes per
+sector (P-W interleaved, Q = bit 6).
 """
 
 import binascii
@@ -19,13 +20,10 @@ SUBCODE = 96
 STATE_ERROR_SKIP = 0
 STATE_ERROR_C2 = 1
 
-_Q_BITS = bytes((0x31 if b & 0x40 else 0x30) for b in range(256))  # byte -> ASCII '1'/'0' of its Q bit
-_ISRC_TABLE = (
-    "0123456789______"
-    "_ABCDEFGHIJKLMNO"
-    "PQRSTUVWXYZ_____"
-    "________________"
-)
+_Q_BITS = bytes(
+    (0x31 if b & 0x40 else 0x30) for b in range(256)
+)  # byte -> ASCII '1'/'0' of its Q bit
+_ISRC_TABLE = "0123456789_______ABCDEFGHIJKLMNOPQRSTUVWXYZ_____________________"
 
 
 @dataclass(frozen=True)
@@ -48,31 +46,38 @@ class _Mapped:
 
     def __init__(self, path: Path) -> None:
         self.path = path
-        self._file = open(path, "rb")
+        self._file = path.open("rb")
         size = self._file.seek(0, 2)
-        self.data = mmap.mmap(self._file.fileno(), 0, access=mmap.ACCESS_READ) if size else b""
+        self.data = (
+            mmap.mmap(self._file.fileno(), 0, access=mmap.ACCESS_READ) if size else b""
+        )
 
-    def __enter__(self):
+    def __enter__(self) -> mmap.mmap | bytes:
         return self.data
 
-    def __exit__(self, *exc) -> None:
+    def __exit__(self, *exc: object) -> None:
         if isinstance(self.data, mmap.mmap):
             self.data.close()
         self._file.close()
 
 
-# --- Q subchannel ---------------------------------------------------------------------------------
+# --- Q subchannel ---------------------------------------------------------------------
 
 
 def q_frames(subcode: bytes) -> list[bytes]:
     """De-interleave the 12-byte Q frame of every sector."""
     bits = subcode.translate(_Q_BITS)
     count = len(subcode) // SUBCODE
-    return [int(bits[i * SUBCODE : (i + 1) * SUBCODE], 2).to_bytes(12, "big") for i in range(count)]
+    return [
+        int(bits[i * SUBCODE : (i + 1) * SUBCODE], 2).to_bytes(12, "big")
+        for i in range(count)
+    ]
 
 
 def q_valid(q: bytes) -> bool:
-    """CRC-16/GSM (poly 0x1021, init 0, xorout 0xFFFF) over Q[0:10] equals the big-endian Q[10:12]."""
+    """CRC-16/GSM (poly 0x1021, init 0, xorout 0xFFFF) over Q[0:10] equals the
+    big-endian Q[10:12].
+    """
     return (binascii.crc_hqx(q[:10], 0) ^ 0xFFFF) == int.from_bytes(q[10:12], "big")
 
 
@@ -86,8 +91,8 @@ def decode_mcn(q: bytes) -> str:
 
 
 def mcn_plausible(q: bytes) -> bool:
-    """Mode 2 layout: 13 BCD digits, 12 zero bits, AFRAME. A damaged mode-1 frame whose ADR nibble reads 2 is all
-    BCD too, so the zero bits must also hold."""
+    """Mode 2 layout: 13 BCD digits, 12 zero bits, AFRAME. A damaged mode-1 frame whose
+    ADR nibble reads 2 is all BCD too, so the zero bits must also hold."""
     digits = []
     for b in q[1:8]:
         digits += [b >> 4, b & 0x0F]
@@ -95,17 +100,21 @@ def mcn_plausible(q: bytes) -> bool:
 
 
 def decode_isrc(q: bytes) -> str:
-    """ADR 3: five 6-bit characters, 2 padding bits, then bytes 4..7 as BCD -> 8 digits, last dropped."""
+    """ADR 3: five 6-bit characters, 2 padding bits, then bytes 4..7 as BCD -> 8 digits,
+    last dropped."""
     isrc = q[1:9]
     bits = int.from_bytes(isrc[:4], "big")
-    letters = "".join(_ISRC_TABLE[(bits >> (32 - 6 * (i + 1))) & 0x3F] for i in range(5))
+    letters = "".join(
+        _ISRC_TABLE[(bits >> (32 - 6 * (i + 1))) & 0x3F] for i in range(5)
+    )
     digits = "".join(f"{(b >> 4) * 10 + (b & 0x0F):02}" for b in isrc[4:8])[:-1]
     return letters + digits
 
 
 def isrc_plausible(q: bytes) -> bool:
-    """Mode 3 layout: 5 x 6-bit characters (country code letters, then 3 alphanumerics), 2 zero bits, 7 BCD
-    digits, 4 zero bits, AFRAME. Damaged mode-1 frames whose ADR nibble reads 3 fail these rules."""
+    """Mode 3 layout: 5 x 6-bit characters (country code letters, then 3 alphanumerics),
+    2 zero bits, 7 BCD digits, 4 zero bits, AFRAME. Damaged mode-1 frames whose ADR
+    nibble reads 3 fail these rules."""
     value = decode_isrc(q)
     letters_ok = value[:2].isalpha() and "_" not in value[2:5]
     padding_ok = q[4] & 0x03 == 0 and q[8] & 0x0F == 0
@@ -118,8 +127,8 @@ class QAnalysis:
     total: int
     program: int
     leadout: int
-    mcn_valid: Counter = field(default_factory=Counter)
-    isrc_valid: dict[int, Counter] = field(default_factory=dict)
+    mcn_valid: Counter[str] = field(default_factory=Counter)
+    isrc_valid: dict[int, Counter[str]] = field(default_factory=dict)
     mcn_first: str | None = None
     isrc_first: dict[int, str] = field(default_factory=dict)
     mcn_in_invalid_only: bool = False
@@ -131,18 +140,22 @@ class QAnalysis:
 
 
 def q_analysis(
-    subcode: bytes, pregap_start: int, leadout_lba: int, track_ranges: list[tuple[int, int, int]]
+    subcode: bytes,
+    pregap_start: int,
+    leadout_lba: int,
+    track_ranges: list[tuple[int, int, int]],
 ) -> QAnalysis:
     """Analyse Q from the drive pre-gap start on.
 
-    track_ranges: (track number, first LBA, LBA after the last) for MCN/ISRC attribution.
+    track_ranges: (track number, first LBA, LBA after the last) for MCN/ISRC
+    attribution.
     """
     frames = q_frames(subcode)
     first_index = max(0, pregap_start - LBA_START)
     runs: list[tuple[int, int]] = []
     program = leadout = 0
-    mcn_valid: Counter = Counter()
-    isrc_valid: dict[int, Counter] = {}
+    mcn_valid: Counter[str] = Counter()
+    isrc_valid: dict[int, Counter[str]] = {}
     mcn_first = None
     isrc_first: dict[int, str] = {}
     mcn_invalid_seen = False
@@ -200,15 +213,18 @@ def q_analysis(
     )
 
 
-# --- read state -----------------------------------------------------------------------------------
+# --- read state -----------------------------------------------------------------------
 
 
 def _first_sample(pregap_start: int, read_offset: int) -> int:
     return max(0, (pregap_start - LBA_START) * SAMPLES - read_offset)
 
 
-def count_errors(state: Path, subcode: Path, pregap_start: int, read_offset: int, leadout_lba: int) -> Counts:
-    """Counts with redumper's semantics: samples and Q sectors from the drive pre-gap start on."""
+def count_errors(
+    state: Path, subcode: Path, pregap_start: int, read_offset: int, leadout_lba: int
+) -> Counts:
+    """Counts with redumper's semantics: samples and Q sectors from the drive pre-gap
+    start on."""
     start = _first_sample(pregap_start, read_offset)
     with _Mapped(state) as data:
         region = data[start:]
@@ -225,8 +241,11 @@ def count_errors(state: Path, subcode: Path, pregap_start: int, read_offset: int
     return Counts(skip, c2, q_program + q_leadout, q_program, q_leadout)
 
 
-def error_runs(state: Path, status: int, pregap_start: int, read_offset: int) -> list[tuple[int, int]]:
-    """LBA runs (inclusive) of sectors holding at least one sample with the given status."""
+def error_runs(
+    state: Path, status: int, pregap_start: int, read_offset: int
+) -> list[tuple[int, int]]:
+    """LBA runs (inclusive) of sectors holding at least one sample with the given
+    status."""
     start = _first_sample(pregap_start, read_offset)
     needle = bytes([status])
     runs: list[tuple[int, int]] = []
@@ -242,17 +261,11 @@ def error_runs(state: Path, status: int, pregap_start: int, read_offset: int) ->
     return runs
 
 
-def region_counts(state: Path, lba_from: int, lba_to: int, read_offset: int = 0) -> tuple[int, int]:
-    """(SKIP samples, C2 samples) for LBAs lba_from..lba_to inclusive."""
-    a = max(0, (lba_from - LBA_START) * SAMPLES - read_offset)
-    b = max(0, (lba_to + 1 - LBA_START) * SAMPLES - read_offset)
-    with _Mapped(state) as data:
-        region = data[a:b]
-    return region.count(bytes([STATE_ERROR_SKIP])), region.count(bytes([STATE_ERROR_C2]))
-
-
-def track_errors(state: Path, start_lba: int, length: int, write_offset: int) -> tuple[int, int, int, int]:
-    """(skip sectors, C2 sectors, skip samples, C2 samples) over a track file's samples, as redumper split counts."""
+def track_errors(
+    state: Path, start_lba: int, length: int, write_offset: int
+) -> tuple[int, int, int, int]:
+    """(skip sectors, C2 sectors, skip samples, C2 samples) over a track file's
+    samples, as redumper split counts."""
     base = (start_lba - LBA_START) * SAMPLES + write_offset
     result = []
     with _Mapped(state) as data:
@@ -273,14 +286,16 @@ def track_errors(state: Path, start_lba: int, length: int, write_offset: int) ->
     return skip_sectors, c2_sectors, skip_samples, c2_samples
 
 
-def track_sha1(scram: Path, start_lba: int, length: int, write_offset: int) -> str | None:
+def track_sha1(
+    scram: Path, start_lba: int, length: int, write_offset: int
+) -> str | None:
     """SHA-1 of the track file bytes cut from .scram; None if outside the file."""
     offset = ((start_lba - LBA_START) * SAMPLES + write_offset) * 4
     size = length * SECTOR
     if offset < 0 or offset + size > scram.stat().st_size:
         return None
     digest = hashlib.sha1()
-    with open(scram, "rb") as handle:
+    with scram.open("rb") as handle:
         handle.seek(offset)
         remaining = size
         while remaining:

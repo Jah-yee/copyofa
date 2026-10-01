@@ -23,8 +23,11 @@ class StageRun:
     record_path: Path
 
 
-def run_recorded(argv: list[str], record_path: Path, *, cwd: Path | None = None, echo: bool = True) -> StageRun:
-    """Run argv with stderr merged into stdout; store every byte in record_path (created, never replaced)."""
+def run_recorded(
+    argv: list[str], record_path: Path, *, cwd: Path | None = None, echo: bool = True
+) -> StageRun:
+    """Run argv with stderr merged into stdout; store every byte in record_path
+    (created, never replaced)."""
     started_at = utc_now()
     interrupted = False
 
@@ -34,8 +37,10 @@ def run_recorded(argv: list[str], record_path: Path, *, cwd: Path | None = None,
             proc.send_signal(signal.SIGINT)  # redumper handles SIGINT and exits cleanly
         interrupted = True
 
-    with open(record_path, "xb") as record:
-        proc = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd)
+    with record_path.open("xb") as record:
+        proc = subprocess.Popen(
+            argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd
+        )
         assert proc.stdout is not None
         fd = proc.stdout.fileno()
         while True:
@@ -47,7 +52,8 @@ def run_recorded(argv: list[str], record_path: Path, *, cwd: Path | None = None,
             if not chunk:
                 break
             record.write(chunk)
-            record.flush()  # a killed coa still leaves everything read so far in the record
+            # a killed coa still leaves everything read so far in the record
+            record.flush()
             if echo:
                 click.echo(chunk, nl=False)
         while True:
@@ -59,7 +65,7 @@ def run_recorded(argv: list[str], record_path: Path, *, cwd: Path | None = None,
         proc.stdout.close()
         record.flush()
         os.fsync(record.fileno())
-    os.chmod(record_path, 0o444)
+    record_path.chmod(0o444)
     return StageRun(
         argv=list(argv),
         command_line=shlex.join(argv),
@@ -74,7 +80,9 @@ def run_recorded(argv: list[str], record_path: Path, *, cwd: Path | None = None,
 def run_capture(argv: list[str], *, cwd: Path | None = None) -> tuple[int, bytes]:
     """Run an unrecorded probe; returns (exit code, combined output)."""
     try:
-        proc = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd, check=False)
+        proc = subprocess.run(
+            argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd, check=False
+        )
     except FileNotFoundError:
         return 127, b""
     return proc.returncode, proc.stdout

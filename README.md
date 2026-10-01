@@ -74,7 +74,16 @@ or `drutil` verbs other than `status`/`list`.
 
 ## Development
 
+Requires [just](https://github.com/casey/just) besides uv; `just --list` shows every recipe.
+
 ```bash
-uv run pytest                    # pilot tests read $COA_PILOT_DUMPS (default ~/Dumps) and skip when absent
-uv run pytest -m "not macos_integration"
+just setup                       # install all dependency groups and the pre-commit hooks
+just test                        # pytest with coverage; pilot tests read $COA_PILOT_DUMPS (default ~/Dumps) and skip when absent
+just test -m "not macos_integration"
+just qa                          # dead code, unused deps, formatting, lint (ruff), strict types (mypy)
 ```
+
+The archive tests need `flac`, `jq`, `par2`, `xz` and `zstd`. CI (`.github/workflows/ci.yml`) runs the QA checks
+and the suite on macOS with Python 3.14, both with the locked dependencies and with the oldest versions
+`pyproject.toml` allows. `coa` supports Python 3.14 only; `requires-python` refuses other interpreters.
+Conventions for contributors and coding agents are in [AGENTS.md](AGENTS.md).

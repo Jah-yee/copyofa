@@ -22,7 +22,9 @@ class Entry:
     why: str
 
     def matches(self, line: str) -> bool:
-        return bool(self.pattern.search(line) if self.contains else self.pattern.fullmatch(line))
+        return bool(
+            self.pattern.search(line) if self.contains else self.pattern.fullmatch(line)
+        )
 
 
 @dataclass(frozen=True)
@@ -46,7 +48,10 @@ def _parse(text: str, source: str) -> list[Entry]:
         try:
             cls = item["class"]
             if cls not in CLASSES:
-                raise EnvironmentFailure(f"{source}: message {i + 1}: class must be one of {', '.join(CLASSES)}")
+                raise EnvironmentFailure(
+                    f"{source}: message {i + 1}: class must be one of "
+                    f"{', '.join(CLASSES)}"
+                )
             entries.append(
                 Entry(
                     pattern=re.compile(item["pattern"]),
@@ -58,9 +63,13 @@ def _parse(text: str, source: str) -> list[Entry]:
                 )
             )
         except KeyError as exc:
-            raise EnvironmentFailure(f"{source}: message {i + 1}: missing key {exc}") from exc
+            raise EnvironmentFailure(
+                f"{source}: message {i + 1}: missing key {exc}"
+            ) from exc
         except re.error as exc:
-            raise EnvironmentFailure(f"{source}: message {i + 1}: invalid pattern: {exc}") from exc
+            raise EnvironmentFailure(
+                f"{source}: message {i + 1}: invalid pattern: {exc}"
+            ) from exc
     return entries
 
 
@@ -70,19 +79,23 @@ class Catalog:
         self.user_path = user_path
 
     @classmethod
-    def load(cls, user_path: Path | None = None) -> "Catalog":
+    def load(cls, user_path: Path | None = None) -> Catalog:
         entries: list[Entry] = []
         if user_path is not None and user_path.exists():
             entries += _parse(user_path.read_text(encoding="utf-8"), str(user_path))
-        packaged = (resources.files("copyofa") / "data" / "messages.toml").read_text(encoding="utf-8")
+        packaged = (resources.files("copyofa") / "data" / "messages.toml").read_text(
+            encoding="utf-8"
+        )
         entries += _parse(packaged, "packaged messages.toml")
         return cls(entries, user_path)
 
     def classify_line(self, record: str, line: str) -> Classified | None:
-        is_message = line.startswith("warning:") or line.startswith("error:")
+        is_message = line.startswith(("warning:", "error:"))
         for entry in self.entries:
             if (entry.contains or is_message) and entry.matches(line):
-                return Classified(record, line, entry.cls, entry.code, entry.acceptable, entry.why)
+                return Classified(
+                    record, line, entry.cls, entry.code, entry.acceptable, entry.why
+                )
         if is_message:
             digest = hashlib.sha1(line.encode("utf-8")).hexdigest()[:8]
             where = self.user_path or "<config dir>/messages.toml"

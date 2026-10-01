@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+# A newer push to the same branch or pull request makes a running check moot.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Every job runs on macOS: coa drives macOS tools, and its PyObjC dependencies
+# have no wheels for other platforms.
+jobs:
+  quality:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      - run: uv sync --locked
+      - run: uv run pyproject-fmt --check pyproject.toml
+      - run: uv run ruff check
+      - run: uv run ruff format --check
+      - run: uv run mypy
+      - run: uv run deptry src
+      - run: uv run vulture
+
+  test:
+    runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        resolution: [highest]
+        include:
+          # The oldest dependency versions pyproject.toml allows. Deprecations
+          # are fatal there, so an old dependency calling an API Python
+          # deprecates fails here rather than when that API is removed.
+          - resolution: lowest-direct
+            warnings: -W error::DeprecationWarning -W error::PendingDeprecationWarning
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      # The archive tests compress, protect and rebuild a real archive set.
+      - run: brew install flac jq par2 xz zstd
+      - run: >-
+          uv run --isolated --python 3.14
+          --resolution ${{ matrix.resolution }} --with pytest
+          python ${{ matrix.warnings }} -m pytest

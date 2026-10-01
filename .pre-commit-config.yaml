@@ -1,0 +1,67 @@
+repos:
+  # General
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      # config.template.toml is a string.Template; `coa init` fills in its
+      # $placeholders, which are not valid TOML until then.
+      - id: check-toml
+        exclude: ^src/copyofa/data/config\.template\.toml$
+      # The fixers never touch tests/fixtures/: the redumper logs and drutil
+      # output there are the tools' own bytes, which the parsers are tested on.
+      - id: end-of-file-fixer
+        exclude: &verbatim ^tests/fixtures/
+      - id: mixed-line-ending
+        exclude: *verbatim
+      - id: trailing-whitespace
+        exclude: *verbatim
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: 914e7df21a07ef503a81201c76d2b11c789d3fca  # frozen: v1.7.12
+    hooks:
+      - id: actionlint
+
+  # Through `uv run`, so the hooks use the versions pinned in uv.lock, as CI does.
+  - repo: local
+    hooks:
+      - id: pyproject-fmt
+        name: pyproject-fmt
+        entry: uv run pyproject-fmt
+        language: system
+        files: ^pyproject\.toml$
+
+      # Fixes first: they can leave code the formatter then changes.
+      - id: ruff-check
+        name: ruff-check
+        entry: uv run ruff check --fix
+        language: system
+        types_or: [python, pyi]
+
+      - id: ruff-format
+        name: ruff-format
+        entry: uv run ruff format
+        language: system
+        types_or: [python, pyi]
+
+      - id: type-check
+        name: type-check
+        entry: uv run mypy
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: deps-unused
+        name: deps-unused
+        entry: uv run deptry src
+        language: system
+        files: (\.py|^pyproject\.toml)$
+        pass_filenames: false
+
+      - id: dead-code
+        name: dead-code
+        entry: uv run vulture
+        language: system
+        types: [python]
+        pass_filenames: false

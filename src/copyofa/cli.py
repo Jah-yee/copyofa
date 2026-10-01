@@ -2,7 +2,7 @@
 
 import traceback
 from pathlib import Path
-from typing import NoReturn
+from typing import Any, NoReturn
 
 import click
 
@@ -16,14 +16,20 @@ from .issues import ACCEPTED, FAIL, PASS, Issue, open_blocking, render
 
 
 def _outcome_line(code: int) -> str:
-    return f"OUTCOME: {PASS if code == EXIT_PASS else ACCEPTED if code == EXIT_ACCEPTED else FAIL}"
+    if code == EXIT_PASS:
+        label = PASS
+    elif code == EXIT_ACCEPTED:
+        label = ACCEPTED
+    else:
+        label = FAIL
+    return f"OUTCOME: {label}"
 
 
 class CoaCommand(click.Command):
-    """Runs the callback (which returns an exit code), reports errors, prints the OUTCOME line when `outcome`
-    is set, and exits with the code."""
+    """Run the callback (which returns an exit code), report errors, print
+    the OUTCOME line when `outcome` is set, and exit with the code."""
 
-    def __init__(self, *args, outcome: bool = False, **kwargs) -> None:
+    def __init__(self, *args: Any, outcome: bool = False, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.outcome = outcome
 
@@ -50,10 +56,18 @@ class CoaGroup(click.Group):
     command_class = CoaCommand
 
 
-@click.group("coa", cls=CoaGroup, context_settings={"help_option_names": ["-h", "--help"]},
-             help="Archive optical discs bit-exactly with redumper")
-@click.option("--config", "config_path", metavar="PATH",
-              help="config file (default $COA_CONFIG or ~/.config/copyofa/config.toml)")
+@click.group(
+    "coa",
+    cls=CoaGroup,
+    context_settings={"help_option_names": ["-h", "--help"]},
+    help="Archive optical discs bit-exactly with redumper",
+)
+@click.option(
+    "--config",
+    "config_path",
+    metavar="PATH",
+    help="config file (default $COA_CONFIG or ~/.config/copyofa/config.toml)",
+)
 @click.version_option(__version__, prog_name="coa", message="%(prog)s %(version)s")
 @click.pass_context
 def main(ctx: click.Context, config_path: str | None) -> None:
@@ -66,36 +80,83 @@ def main(ctx: click.Context, config_path: str | None) -> None:
 @click.pass_obj
 def init_cmd(config_path: str | None, archive_root: Path, work_root: Path) -> int:
     paths = config.init(config.resolve_path(config_path), archive_root, work_root)
-    click.echo(f"config: {paths[0]}\narchive root: {paths[1]}\nwork root: {paths[2]}\nprefix vocabulary: {paths[3]}")
+    click.echo(
+        f"config: {paths[0]}\n"
+        f"archive root: {paths[1]}\n"
+        f"work root: {paths[2]}\n"
+        f"prefix vocabulary: {paths[3]}"
+    )
     return 0
 
 
-@main.command("archive", outcome=True, help="acquire, verify and publish a medium (resumable)")
+@main.command(
+    "archive", outcome=True, help="acquire, verify and publish a medium (resumable)"
+)
 @click.argument("holon")
 @click.argument("medium")
-@click.option("--media-list", help="declared media list of the product (first medium only)")
+@click.option(
+    "--media-list", help="declared media list of the product (first medium only)"
+)
 @click.option("--drive", help="configured drive name")
-@click.option("--wait", type=float, default=300, show_default=True, help="seconds to wait for a medium")
+@click.option(
+    "--wait",
+    type=float,
+    default=300,
+    show_default=True,
+    help="seconds to wait for a medium",
+)
 @click.option("--redundancy", type=click.Choice(["on", "off"]))
 @click.option("--redundancy-reason")
 @click.pass_obj
-def archive_cmd(config_path: str | None, holon: str, medium: str, media_list: str | None, drive: str | None,
-                wait: float, redundancy: str | None, redundancy_reason: str | None) -> int:
-    return acquire.archive(config.load(config_path), holon, medium, media_list=media_list, drive_name=drive,
-                           wait=wait, redundancy=redundancy, redundancy_reason=redundancy_reason)
+def archive_cmd(
+    config_path: str | None,
+    holon: str,
+    medium: str,
+    media_list: str | None,
+    drive: str | None,
+    wait: float,
+    redundancy: str | None,
+    redundancy_reason: str | None,
+) -> int:
+    return acquire.archive(
+        config.load(config_path),
+        holon,
+        medium,
+        media_list=media_list,
+        drive_name=drive,
+        wait=wait,
+        redundancy=redundancy,
+        redundancy_reason=redundancy_reason,
+    )
 
 
-@main.command("refine", outcome=True, help="run another refine pass after acquisition, then verify again")
+@main.command(
+    "refine",
+    outcome=True,
+    help="run another refine pass after acquisition, then verify again",
+)
 @click.argument("holon")
 @click.argument("medium")
 @click.option("--retries", type=int, required=True)
 @click.option("--speed", type=float)
 @click.option("--refine-subchannel", is_flag=True)
 @click.pass_obj
-def refine_cmd(config_path: str | None, holon: str, medium: str, retries: int, speed: float | None,
-               refine_subchannel: bool) -> int:
-    return acquire.refine(config.load(config_path), holon, medium, retries=retries, speed=speed,
-                          refine_subchannel=refine_subchannel)
+def refine_cmd(
+    config_path: str | None,
+    holon: str,
+    medium: str,
+    retries: int,
+    speed: float | None,
+    refine_subchannel: bool,
+) -> int:
+    return acquire.refine(
+        config.load(config_path),
+        holon,
+        medium,
+        retries=retries,
+        speed=speed,
+        refine_subchannel=refine_subchannel,
+    )
 
 
 @main.command("accept", help="accept an open blocking issue")
@@ -104,7 +165,9 @@ def refine_cmd(config_path: str | None, holon: str, medium: str, retries: int, s
 @click.argument("code")
 @click.option("--reason", required=True)
 @click.pass_obj
-def accept_cmd(config_path: str | None, holon: str, medium: str, code: str, reason: str) -> int:
+def accept_cmd(
+    config_path: str | None, holon: str, medium: str, code: str, reason: str
+) -> int:
     return acquire.accept(config.load(config_path), holon, medium, code, reason)
 
 
@@ -119,7 +182,13 @@ def discard_cmd(config_path: str | None, holon: str, medium: str, yes: bool) -> 
 
 @main.command("drive-test", help="run and cache redumper drive::test")
 @click.option("--drive", help="configured drive name")
-@click.option("--wait", type=float, default=300, show_default=True, help="seconds to wait for a medium")
+@click.option(
+    "--wait",
+    type=float,
+    default=300,
+    show_default=True,
+    help="seconds to wait for a medium",
+)
 @click.pass_obj
 def drive_test_cmd(config_path: str | None, drive: str | None, wait: float) -> int:
     return acquire.drive_test(config.load(config_path), drive, wait)
@@ -137,10 +206,26 @@ def status_cmd(config_path: str | None, holon: str | None, medium: str | None) -
             for d in sorted(cfg.work_root.iterdir()):
                 if d.is_dir() and (d / "state.json").exists():
                     work_holon, _, work_medium = d.name.partition("-")
-                    state = load_state(WorkPaths(cfg.work_root, work_holon, work_medium))
-                    issues = [Issue.from_dict(i) for i in state["issues"] + state["pre_dump_issues"]]
-                    codes = ", ".join(i.code for i in open_blocking(issues, state["acceptances"])) or "-"
-                    rows.append(f"{d.name}  {state['phase']}  open: {codes}")
+                    state = load_state(
+                        WorkPaths(cfg.work_root, work_holon, work_medium)
+                    )
+                    issues = [
+                        Issue.from_dict(i)
+                        for i in state["issues"] + state["pre_dump_issues"]  # type: ignore[index]
+                    ]
+                    codes = (
+                        ", ".join(
+                            i.code
+                            for i in open_blocking(
+                                issues,
+                                state["acceptances"],  # type: ignore[index]
+                            )
+                        )
+                        or "-"
+                    )
+                    rows.append(
+                        f"{d.name}  {state['phase']}  open: {codes}"  # type: ignore[index]
+                    )
         click.echo("\n".join(rows) if rows else "no work in progress")
         return 0
     from .archive.transaction import journals
@@ -158,16 +243,26 @@ def status_cmd(config_path: str | None, holon: str | None, medium: str | None) -
                 if meta.exists():
                     import json
 
-                    partial = json.loads(meta.read_text(encoding="utf-8")).get("partial")
-                extra = (f"  {entry['permanence']}  {entry['outcome']}  {entry['archived_at']}"
-                         + (f"  partial ({partial['prefix']})" if partial else ""))
+                    partial = json.loads(meta.read_text(encoding="utf-8")).get(
+                        "partial"
+                    )
+                extra = (
+                    f"  {entry['permanence']}  {entry['outcome']}  "
+                    f"{entry['archived_at']}"
+                    + (f"  partial ({partial['prefix']})" if partial else "")
+                )
             click.echo(f"{entry['medium_id']:8} {entry['status']}{extra}")
         click.echo(product_mod.completeness_line(doc))
         permanent, total, _ = product_mod.completeness(doc)
         if permanent < total:
-            click.echo(f"ISSUE incomplete-product: {total - permanent} optical medium/media not permanently archived")
+            click.echo(
+                f"ISSUE incomplete-product: {total - permanent} "
+                "optical medium/media not permanently archived"
+            )
         for journal in journals(pd):
-            click.echo(f"UNCOMMITTED {journal.relative_to(pd)}: run coa recover {holon}")
+            click.echo(
+                f"UNCOMMITTED {journal.relative_to(pd)}: run coa recover {holon}"
+            )
         for path in pd.iterdir():
             if path.name.startswith((".coa-staging-", ".coa-backup-")):
                 click.echo(f"UNCOMMITTED leftover {path.name}: run coa recover {holon}")
@@ -187,14 +282,25 @@ def status_cmd(config_path: str | None, holon: str | None, medium: str | None) -
         for s in state["stages"]:
             label = f" ({s['label']})" if s["label"] else ""
             nn = f"{s['nn']:02d}" if s["nn"] is not None else "--"
-            click.echo(f"  {nn} {s['name']}{label}: exit {s['exit_code']}{' interrupted' if s['interrupted'] else ''}")
+            click.echo(
+                f"  {nn} {s['name']}{label}: exit {s['exit_code']}"
+                f"{' interrupted' if s['interrupted'] else ''}"
+            )
         for skipped in state["skipped_stages"]:
-            click.echo(f"  skipped {skipped['command']} ({skipped['label']}): {skipped['reason']}")
-        issues = [Issue.from_dict(i) for i in state["issues"] + state["pre_dump_issues"]]
+            click.echo(
+                f"  skipped {skipped['command']} ({skipped['label']}): "
+                f"{skipped['reason']}"
+            )
+        issues = [
+            Issue.from_dict(i) for i in state["issues"] + state["pre_dump_issues"]
+        ]
         for issue in open_blocking(issues, state["acceptances"]):
             click.echo(render(issue))
         for acceptance in state["acceptances"]:
-            click.echo(f"  accepted {acceptance['code']} at {acceptance['accepted_at']}: {acceptance['reason']}")
+            click.echo(
+                f"  accepted {acceptance['code']} at "
+                f"{acceptance['accepted_at']}: {acceptance['reason']}"
+            )
     return 0
 
 
@@ -204,10 +310,14 @@ def status_cmd(config_path: str | None, holon: str | None, medium: str | None) -
 @click.option("--deep", is_flag=True)
 @click.option("--repair", is_flag=True)
 @click.pass_obj
-def verify_cmd(config_path: str | None, holon: str, medium: str | None, deep: bool, repair: bool) -> int:
+def verify_cmd(
+    config_path: str | None, holon: str, medium: str | None, deep: bool, repair: bool
+) -> int:
     from .archive.verify import verify_command
 
-    return verify_command(config.load(config_path), holon, medium, deep=deep, repair=repair)
+    return verify_command(
+        config.load(config_path), holon, medium, deep=deep, repair=repair
+    )
 
 
 @main.command("amend", help="change the media list of a product")
@@ -219,19 +329,33 @@ def amend_cmd(config_path: str | None, holon: str, media_list: str, reason: str)
     return product_mod.amend(config.load(config_path), holon, media_list, reason)
 
 
-@main.command("reprocess", help="re-derive the metadata from the archived raw files and reseal")
+@main.command(
+    "reprocess", help="re-derive the metadata from the archived raw files and reseal"
+)
 @click.argument("holon")
 @click.argument("medium")
 @click.option("--reason", required=True)
 @click.option("--redundancy", type=click.Choice(["on", "off"]))
 @click.option("--redundancy-reason")
 @click.pass_obj
-def reprocess_cmd(config_path: str | None, holon: str, medium: str, reason: str, redundancy: str | None,
-                  redundancy_reason: str | None) -> int:
+def reprocess_cmd(
+    config_path: str | None,
+    holon: str,
+    medium: str,
+    reason: str,
+    redundancy: str | None,
+    redundancy_reason: str | None,
+) -> int:
     from .archive.reprocess import reprocess
 
-    return reprocess(config.load(config_path), holon, medium, reason, redundancy=redundancy,
-                     redundancy_reason=redundancy_reason)
+    return reprocess(
+        config.load(config_path),
+        holon,
+        medium,
+        reason,
+        redundancy=redundancy,
+        redundancy_reason=redundancy_reason,
+    )
 
 
 @main.command("recover", help="finish or roll back an interrupted transaction")

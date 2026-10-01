@@ -27,7 +27,9 @@ def _check_options(command: str, options: tuple[str, ...] | list[str]) -> None:
             "split": option in ("--leave-unchanged", "--force-split"),
         }.get(command, False)
         if not allowed:
-            raise ValueError(f"redumper option {option!r} is not allowed for {command!r}")
+            raise ValueError(
+                f"redumper option {option!r} is not allowed for {command!r}"
+            )
     if command == "split" and "--leave-unchanged" not in options:
         raise ValueError("redumper split must run with --leave-unchanged")
 
@@ -45,7 +47,13 @@ def build_argv(
     if command not in DRIVE_COMMANDS | OFFLINE_COMMANDS:
         raise ValueError(f"redumper command {command!r} is not allowed")
     _check_options(command, tuple(options))
-    argv = [redumper, command, "--verbose", f"--image-path={image_path}", f"--image-name={image_name}"]
+    argv = [
+        redumper,
+        command,
+        "--verbose",
+        f"--image-path={image_path}",
+        f"--image-name={image_name}",
+    ]
     if command in DRIVE_COMMANDS:
         if not drive_bsd:
             raise ValueError(f"redumper {command} needs a drive")

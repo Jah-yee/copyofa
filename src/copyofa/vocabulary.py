@@ -27,7 +27,9 @@ class Vocabulary:
 
 
 def default_text() -> str:
-    return (resources.files("copyofa") / "data" / "media-prefixes.default.toml").read_text(encoding="utf-8")
+    return (
+        resources.files("copyofa") / "data" / "media-prefixes.default.toml"
+    ).read_text(encoding="utf-8")
 
 
 def parse(text: str, path: Path) -> Vocabulary:
@@ -39,7 +41,9 @@ def parse(text: str, path: Path) -> Vocabulary:
     for name, entry in data.get("prefixes", {}).items():
         sides = entry.get("sides", "none")
         if sides not in ("none", "optional", "required"):
-            raise EnvironmentFailure(f"{path}: prefix {name}: sides must be none, optional or required")
+            raise EnvironmentFailure(
+                f"{path}: prefix {name}: sides must be none, optional or required"
+            )
         prefixes[name] = Prefix(
             name=name,
             media=tuple(entry.get("media", [])),

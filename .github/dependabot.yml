@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  # The uv ecosystem updates uv.lock. The pip one would leave it stale, failing
+  # CI's `uv sync --locked`.
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # The minimum versions in pyproject.toml are deliberate, and the
+    # lowest-direct CI job tests them, so only the lock moves.
+    versioning-strategy: "lockfile-only"
