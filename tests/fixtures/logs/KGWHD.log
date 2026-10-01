@@ -1,0 +1,184 @@
+=== 2026-09-29 18:47:23 ========================================================
+redumper (build: b753+d8fix)
+
+arguments: disc --drive=disk6 --image-name=KGWHD --retries=20 --refine-subchannel
+
+drive information
+  path: disk6
+  inquiry: PLEXTOR - CD-R PX-W5224A (revision level: 1.04, vendor specific: 04/10/06 17:00)
+  configuration: PLEXTOR (read offset: +30, C2 shift: 294, pre-gap start: -75, read method: D8, sector order: DATA_C2_SUB)
+  profile: CD-R
+  read speed: <optimal>
+
+image path: .
+image name: KGWHD
+
+*** DUMP (time check: 0s)
+
+disc TOC:
+  track 01 { audio }
+    index 01 { LBA:      0, MSF: 00:02:00 }
+  track 02 { audio }
+    index 01 { LBA:  28024, MSF: 06:15:49 }
+  track 03 { audio }
+    index 01 { LBA:  49359, MSF: 11:00:09 }
+  track 04 { audio }
+    index 01 { LBA:  75978, MSF: 16:55:03 }
+  track 05 { audio }
+    index 01 { LBA:  99498, MSF: 22:08:48 }
+  track 06 { audio }
+    index 01 { LBA: 112215, MSF: 24:58:15 }
+  track 07 { audio }
+    index 01 { LBA: 139857, MSF: 31:06:57 }
+  track 08 { audio }
+    index 01 { LBA: 163091, MSF: 36:16:41 }
+  track 09 { audio }
+    index 01 { LBA: 195114, MSF: 43:23:39 }
+  track 10 { audio }
+    index 01 { LBA: 218598, MSF: 48:36:48 }
+  track AA { audio }
+    index 01 { LBA: 241800, MSF: 53:46:00 }
+
+media errors: 
+  SCSI: 0 samples
+  C2: 0 samples
+  Q: 446
+
+*** DUMP::EXTRA (time check: 235s)
+
+PLEXTOR: reading lead-in (retry: 1)
+PLEXTOR: lead-in found (LBA: [-150 .. 15], sectors: 4149)
+PLEXTOR: reading lead-in (retry: 2)
+PLEXTOR: lead-in found (LBA: [-150 .. 15], sectors: 4334)
+PLEXTOR: storing lead-in (LBA: [-150 .. 15], verified: yes)
+
+*** PROTECTION (time check: 30s)
+
+protection: none
+
+*** REFINE (time check: 0s)
+
+correction statistics: 
+  SCSI: 0 samples
+  C2: 0 samples
+  Q: 316 sectors
+
+*** DVDKEY (time check: 100s)
+
+
+*** SPLIT (time check: 0s)
+
+
+correcting P... done
+correcting Q... done
+
+final TOC:
+  track 01 { audio }
+    index 00 { LBA: [  -150 ..     -1], length:    150, MSF: 00:00:00-00:01:74 }
+    index 01 { LBA: [     0 ..  27875], length:  27876, MSF: 00:02:00-06:13:50 }
+  track 02 { audio }
+    index 00 { LBA: [ 27876 ..  28023], length:    148, MSF: 06:13:51-06:15:48 }
+    index 01 { LBA: [ 28024 ..  49210], length:  21187, MSF: 06:15:49-10:58:10 }
+  track 03 { audio }
+    index 00 { LBA: [ 49211 ..  49358], length:    148, MSF: 10:58:11-11:00:08 }
+    index 01 { LBA: [ 49359 ..  75828], length:  26470, MSF: 11:00:09-16:53:03 }
+  track 04 { audio }
+    index 00 { LBA: [ 75829 ..  75977], length:    149, MSF: 16:53:04-16:55:02 }
+    index 01 { LBA: [ 75978 ..  99349], length:  23372, MSF: 16:55:03-22:06:49 }
+  track 05 { audio }
+    index 00 { LBA: [ 99350 ..  99497], length:    148, MSF: 22:06:50-22:08:47 }
+    index 01 { LBA: [ 99498 .. 112065], length:  12568, MSF: 22:08:48-24:56:15 }
+  track 06 { audio }
+    index 00 { LBA: [112066 .. 112214], length:    149, MSF: 24:56:16-24:58:14 }
+    index 01 { LBA: [112215 .. 139708], length:  27494, MSF: 24:58:15-31:04:58 }
+  track 07 { audio }
+    index 00 { LBA: [139709 .. 139856], length:    148, MSF: 31:04:59-31:06:56 }
+    index 01 { LBA: [139857 .. 162941], length:  23085, MSF: 31:06:57-36:14:41 }
+  track 08 { audio }
+    index 00 { LBA: [162942 .. 163090], length:    149, MSF: 36:14:42-36:16:40 }
+    index 01 { LBA: [163091 .. 194964], length:  31874, MSF: 36:16:41-43:21:39 }
+  track 09 { audio }
+    index 00 { LBA: [194965 .. 195113], length:    149, MSF: 43:21:40-43:23:38 }
+    index 01 { LBA: [195114 .. 218448], length:  23335, MSF: 43:23:39-48:34:48 }
+  track 10 { audio }
+    index 00 { LBA: [218449 .. 218597], length:    149, MSF: 48:34:49-48:36:47 }
+    index 01 { LBA: [218598 .. 241799], length:  23202, MSF: 48:36:48-53:45:74 }
+  track AA { audio }
+    index 01 { LBA: [241800 .. 241899], length:    100, MSF: 53:46:00-53:47:24 }
+
+analyzing... done (time: 12s)
+
+non-zero  TOC sample range: [   -88200 .. +142178400]
+non-zero data sample range: [   +16112 .. +142173755]
+Universal Hash (SHA-1): d2b0e9e4a4455318e14aeeae38fb5cc9b4069393
+
+Perfect Audio Offset (silence level: 0): [-415 .. +1350]
+fallback offset 0 applied
+disc write offset: +0
+
+checking tracks
+done
+
+writing tracks
+done
+
+CUE [KGWHD.cue]:
+FILE "KGWHD (Track 01).bin" BINARY
+  TRACK 01 AUDIO
+    INDEX 01 00:00:00
+FILE "KGWHD (Track 02).bin" BINARY
+  TRACK 02 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:01:73
+FILE "KGWHD (Track 03).bin" BINARY
+  TRACK 03 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:01:73
+FILE "KGWHD (Track 04).bin" BINARY
+  TRACK 04 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:01:74
+FILE "KGWHD (Track 05).bin" BINARY
+  TRACK 05 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:01:73
+FILE "KGWHD (Track 06).bin" BINARY
+  TRACK 06 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:01:74
+FILE "KGWHD (Track 07).bin" BINARY
+  TRACK 07 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:01:73
+FILE "KGWHD (Track 08).bin" BINARY
+  TRACK 08 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:01:74
+FILE "KGWHD (Track 09).bin" BINARY
+  TRACK 09 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:01:74
+FILE "KGWHD (Track 10).bin" BINARY
+  TRACK 10 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:01:74
+
+
+*** HASH (time check: 23s)
+
+dat:
+<rom name="KGWHD (Track 01).bin" size="65564352" crc="9b63ddc9" md5="a34415b4722311e9b34ead3f8c740c27" sha1="f7b811ba1ca1e3a6800a2e5fd2135e1db2f358e4" />
+<rom name="KGWHD (Track 02).bin" size="50179920" crc="1a3fa233" md5="69671f691316f37b7e9bc585762ec9a6" sha1="171ca3bbe272b946a137f65670dbf3b75d312680" />
+<rom name="KGWHD (Track 03).bin" size="62605536" crc="4f9abf3c" md5="352323c97f50983cbe9a347cbf99f474" sha1="d77d777faa999718c5f7566401a44b5c68e117a6" />
+<rom name="KGWHD (Track 04).bin" size="55321392" crc="94e7b5ab" md5="8746607e9d94c388039f8736e4fe31f0" sha1="e0e16aa2b2b551b120ba5aed22bb53b1614a49bb" />
+<rom name="KGWHD (Track 05).bin" size="29908032" crc="a5adf532" md5="3f3a89d99d6f0ceaf73f0f56cfc3e2b7" sha1="2f6dd7b330d68c8351194a3c2a1b0b4821b245df" />
+<rom name="KGWHD (Track 06).bin" size="65016336" crc="7a7c6eaa" md5="6a5a1d274f31dfaf6d98486d6417d1ee" sha1="e73b329153824c2b2169304b56956b6f7a9cb802" />
+<rom name="KGWHD (Track 07).bin" size="54644016" crc="8a89bb69" md5="1db0821605015f4382296b0669bd1968" sha1="a66f145c86260384a66571d5c297ce2a072a3a92" />
+<rom name="KGWHD (Track 08).bin" size="75318096" crc="f2450da8" md5="a079c40d0b3ac6a1988e28ced1242eff" sha1="481b25b6753cd278bccf8b69b451ec0c6157688d" />
+<rom name="KGWHD (Track 09).bin" size="55234368" crc="df320224" md5="39cf7356135f20555a865aacb9ba07c8" sha1="74a8aa5bf1b2840b7f0a2538010ee6a79601b8ac" />
+<rom name="KGWHD (Track 10).bin" size="54921552" crc="3eef06dd" md5="aed94f32b3990089c993f7173bd71bdd" sha1="2ac19a88892c6d1d5da4123e69b6216ea77754b8" />
+
+*** INFO (time check: 0s)
+
+
+*** END (time check: 0s)

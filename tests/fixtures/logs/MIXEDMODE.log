@@ -1,0 +1,231 @@
+=== 2026-09-29 20:13:07 ========================================================
+redumper (build: b753+d8fix)
+
+arguments: disc --drive=disk6 --image-name=MIXEDMODE --retries=20 --refine-subchannel
+
+drive information
+  path: disk6
+  inquiry: PLEXTOR - CD-R PX-W5224A (revision level: 1.04, vendor specific: 04/10/06 17:00)
+  configuration: PLEXTOR (read offset: +30, C2 shift: 294, pre-gap start: -75, read method: D8, sector order: DATA_C2_SUB)
+  profile: CD-ROM
+  read speed: <optimal>
+
+image path: .
+image name: MIXEDMODE
+
+*** DUMP (time check: 0s)
+
+disc TOC:
+  session 1
+    track 01 { audio }
+      index 01 { LBA:      0, MSF: 00:02:00 }
+    track 02 { audio }
+      index 01 { LBA:  25969, MSF: 05:48:19 }
+    track 03 { audio }
+      index 01 { LBA:  47180, MSF: 10:31:05 }
+    track 04 { audio }
+      index 01 { LBA:  68817, MSF: 15:19:42 }
+    track 05 { audio }
+      index 01 { LBA:  94654, MSF: 21:04:04 }
+    track 06 { audio }
+      index 01 { LBA: 116949, MSF: 26:01:24 }
+    track 07 { audio }
+      index 01 { LBA: 143306, MSF: 31:52:56 }
+    track 08 { audio }
+      index 01 { LBA: 163872, MSF: 36:26:72 }
+    track 09 { audio }
+      index 01 { LBA: 181975, MSF: 40:28:25 }
+    track 10 { audio }
+      index 01 { LBA: 201704, MSF: 44:51:29 }
+    track AA { audio }
+      index 01 { LBA: 220562, MSF: 49:02:62 }
+  session 2
+    track 11 {  data }
+      index 01 { LBA: 231962, MSF: 51:34:62 }
+    track AA {  data }
+      index 01 { LBA: 350210, MSF: 77:51:35 }
+
+[LBA: 227326] session gap jump (LBA: 231887)                     
+media errors: 
+  SCSI: 588 samples
+  C2: 0 samples
+  Q: 159
+
+*** DUMP::EXTRA (time check: 490s)
+
+PLEXTOR: reading lead-in (retry: 1)
+PLEXTOR: lead-in found (LBA: [-150 .. 15], sectors: 1793)
+PLEXTOR: reading lead-in (retry: 2)
+PLEXTOR: lead-in found (LBA: [-150 .. 15], sectors: 2765)
+PLEXTOR: storing lead-in (LBA: [-150 .. 15], verified: yes)
+
+*** PROTECTION (time check: 20s)
+
+protection: none
+
+*** REFINE (time check: 0s)
+
+disc write offset: -12
+
+[LBA: 227322] session gap jump (LBA: 231887)                                       
+correction statistics: 
+  SCSI: 588 samples
+  C2: 0 samples
+  Q: 52 sectors
+
+*** DVDKEY (time check: 333s)
+
+
+*** SPLIT (time check: 0s)
+
+
+correcting P... done
+correcting Q... done
+
+final TOC:
+  session 1
+    track 01 { audio }
+      index 00 { LBA: [  -150 ..     -1], length:    150, MSF: 00:00:00-00:01:74 }
+      index 01 { LBA: [     0 ..  25818], length:  25819, MSF: 00:02:00-05:46:18 }
+    track 02 { audio }
+      index 00 { LBA: [ 25819 ..  25968], length:    150, MSF: 05:46:19-05:48:18 }
+      index 01 { LBA: [ 25969 ..  47029], length:  21061, MSF: 05:48:19-10:29:04 }
+    track 03 { audio }
+      index 00 { LBA: [ 47030 ..  47179], length:    150, MSF: 10:29:05-10:31:04 }
+      index 01 { LBA: [ 47180 ..  68666], length:  21487, MSF: 10:31:05-15:17:41 }
+    track 04 { audio }
+      index 00 { LBA: [ 68667 ..  68816], length:    150, MSF: 15:17:42-15:19:41 }
+      index 01 { LBA: [ 68817 ..  94503], length:  25687, MSF: 15:19:42-21:02:03 }
+    track 05 { audio }
+      index 00 { LBA: [ 94504 ..  94653], length:    150, MSF: 21:02:04-21:04:03 }
+      index 01 { LBA: [ 94654 .. 116798], length:  22145, MSF: 21:04:04-25:59:23 }
+    track 06 { audio }
+      index 00 { LBA: [116799 .. 116948], length:    150, MSF: 25:59:24-26:01:23 }
+      index 01 { LBA: [116949 .. 143155], length:  26207, MSF: 26:01:24-31:50:55 }
+    track 07 { audio }
+      index 00 { LBA: [143156 .. 143305], length:    150, MSF: 31:50:56-31:52:55 }
+      index 01 { LBA: [143306 .. 163721], length:  20416, MSF: 31:52:56-36:24:71 }
+    track 08 { audio }
+      index 00 { LBA: [163722 .. 163871], length:    150, MSF: 36:24:72-36:26:71 }
+      index 01 { LBA: [163872 .. 181824], length:  17953, MSF: 36:26:72-40:26:24 }
+    track 09 { audio }
+      index 00 { LBA: [181825 .. 181974], length:    150, MSF: 40:26:25-40:28:24 }
+      index 01 { LBA: [181975 .. 201553], length:  19579, MSF: 40:28:25-44:49:28 }
+    track 10 { audio }
+      index 00 { LBA: [201554 .. 201703], length:    150, MSF: 44:49:29-44:51:28 }
+      index 01 { LBA: [201704 .. 220561], length:  18858, MSF: 44:51:29-49:02:61 }
+    track AA { audio }
+      index 01 { LBA: [220562 .. 227311], length:   6750, MSF: 49:02:62-50:32:61 }
+  session 2
+    track 11 {  data }
+      index 00 { LBA: [231887 .. 231961], length:     75, MSF: 51:33:62-51:34:61 }
+      index 01 { LBA: [231962 .. 350209], length: 118248, MSF: 51:34:62-77:51:34 }
+    track AA {  data }
+      index 01 { LBA: [350210 .. 350308], length:     99, MSF: 77:51:35-77:52:58 }
+
+analyzing... done (time: 16s)
+
+data disc detected, offset configuration: 
+  LBA: 227311 -> 227312, MSF: 50:32:62, count: 122997, offset: -12
+
+non-zero  TOC sample range: [   -88200 .. +205923480]
+non-zero data sample range: [    +4751 .. +205981662]
+warning: non-zero data range is not continuous, skipping Universal Hash calculation
+
+disc write offset: -12
+
+warning: incomplete pre-gap (session: 2, unavailable: 75/150)
+checking tracks
+done
+
+writing tracks
+done
+
+multisession: 
+  session 1: 0-220561
+  session 2: 231962-350209
+
+CUE [MIXEDMODE.cue]:
+REM SESSION 01
+FILE "MIXEDMODE (Track 01).bin" BINARY
+  TRACK 01 AUDIO
+    INDEX 01 00:00:00
+FILE "MIXEDMODE (Track 02).bin" BINARY
+  TRACK 02 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:02:00
+FILE "MIXEDMODE (Track 03).bin" BINARY
+  TRACK 03 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:02:00
+FILE "MIXEDMODE (Track 04).bin" BINARY
+  TRACK 04 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:02:00
+FILE "MIXEDMODE (Track 05).bin" BINARY
+  TRACK 05 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:02:00
+FILE "MIXEDMODE (Track 06).bin" BINARY
+  TRACK 06 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:02:00
+FILE "MIXEDMODE (Track 07).bin" BINARY
+  TRACK 07 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:02:00
+FILE "MIXEDMODE (Track 08).bin" BINARY
+  TRACK 08 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:02:00
+FILE "MIXEDMODE (Track 09).bin" BINARY
+  TRACK 09 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:02:00
+FILE "MIXEDMODE (Track 10).bin" BINARY
+  TRACK 10 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:02:00
+REM LEAD-OUT 01:30:00
+REM SESSION 02
+REM LEAD-IN 01:00:00
+REM PREGAP 00:02:00
+FILE "MIXEDMODE (Track 11).bin" BINARY
+  TRACK 11 MODE1/2352
+    INDEX 01 00:00:00
+
+
+*** HASH (time check: 29s)
+
+dat:
+<rom name="MIXEDMODE (Track 01).bin" size="60726288" crc="82b705ad" md5="53296de85a6080b65866fa981a6f7128" sha1="a85dc550013af3ed76c1c7dcdb8aa493e5b57d66" />
+<rom name="MIXEDMODE (Track 02).bin" size="49888272" crc="eea6909d" md5="4d31622d93e62dcf1598b4a061b7b081" sha1="77851d962a1326bba0dc62e8fe2980e58e9a406c" />
+<rom name="MIXEDMODE (Track 03).bin" size="50890224" crc="9892e759" md5="e88078345d09f0341f18f6b5b9937ffe" sha1="791d6acc55a77944bb3b268047437203ec67921e" />
+<rom name="MIXEDMODE (Track 04).bin" size="60768624" crc="856feac3" md5="3a19affc299374d3506c0d09f2980043" sha1="d25456d796395bdde6e712f57cfb47dd7b7af5c7" />
+<rom name="MIXEDMODE (Track 05).bin" size="52437840" crc="6bf368c9" md5="b15c42214b7dd4cf1987e0274b3ec20b" sha1="aaf4b7b13df95f3452766f55906721e3e8d7da0b" />
+<rom name="MIXEDMODE (Track 06).bin" size="61991664" crc="98eec184" md5="61a97a9598b338e9bc99a9ea9bb43e08" sha1="0042d59a532c288f2c3741a4a4042d897d51d789" />
+<rom name="MIXEDMODE (Track 07).bin" size="48371232" crc="96a1ecc3" md5="912810ffe70eccad0b591d10158ad3ef" sha1="512059376923939e5b51cbfe19d0a342167fd9ee" />
+<rom name="MIXEDMODE (Track 08).bin" size="42578256" crc="62cabf8b" md5="8dd7dfe4786f9b16d778f8449b65b59c" sha1="a4ca34cfb4386afd58d7730209daa9b281112761" />
+<rom name="MIXEDMODE (Track 09).bin" size="46402608" crc="3bdc28b6" md5="aaae4754a00e6b09c63907457e8616e6" sha1="6bcd3bc59c2f000665202858a8c73e5532035ed0" />
+<rom name="MIXEDMODE (Track 10).bin" size="44706816" crc="c6221573" md5="21d9d8dc81ea244bc1ea0079fc123ebb" sha1="e45e523fbb8b72f7102cd25a714d645d3639e188" />
+<rom name="MIXEDMODE (Track 11).bin" size="278119296" crc="20e83a42" md5="19205b35e525b805165461e8eb9d69a8" sha1="e348a5a8577cf9089a8377777775c2255d50a173" />
+
+*** INFO (time check: 0s)
+
+CD-ROM [MIXEDMODE (Track 11).bin]:
+  sectors count: 118248
+  mode1 sectors: 118248
+
+  REDUMP.INFO errors: 0
+
+ISO9660 [MIXEDMODE (Track 11).bin]:
+  volume identifier: SONIC_VOL_21
+  PVD:
+0320 : 20 20 20 20 20 20 20 20  20 20 20 20 20 32 30 30                200
+0330 : 32 30 39 30 33 31 33 34  39 32 38 30 30 00 32 30   2090313492800.20
+0340 : 30 32 30 39 30 33 31 34  31 38 34 35 30 30 00 00   02090314184500..
+0350 : 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00   ................
+0360 : 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00   ................
+0370 : 00 01 00 00 00 00 00 00  00 00 00 00 00 00 00 00   ................
+
+*** END (time check: 1s)

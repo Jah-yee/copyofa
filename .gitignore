@@ -1,0 +1,11 @@
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+*.egg-info/
+*.py[cod]
+build/
+dist/
+
+# These redumper logs are required by the tests
+!tests/fixtures/logs/*.log

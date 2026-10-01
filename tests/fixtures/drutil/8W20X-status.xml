@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<statusdoc>
+  <statusfordevice>
+    <device name="PLEXTOR CD-R PX-W5224A">
+      <vendor name="PLEXTOR"/><product name="CD-R   PX-W5224A"/><firmware revision="1.04"/>
+      <interconnect name="USB"/><support level="unSupported"/>
+    </device>
+    <deviceStatus>
+      <writeSpeed maxSpeed="9172.8" currentSpeed="705.6"/>
+      <mediaInfo>
+        <usedSpace blockCount="278792" msf="61:57:17"/>
+        <freeSpace blockCount="0" msf="0:00:00"/>
+        <overwritableSpace blockCount="0" msf="0:00:00"/>
+        <mediaClass value="CD"/>
+        <mediaType value="CD-ROM"/>
+        <trackCount value="0"/>
+        <sessionCount value="0"/>
+        <burnSpeedList/>
+        <discInfo>
+          <discInfoBlock>
+            <rawdata>ACAOAQEBDgAAAAAAAAAAAAD///8A////AAAAAAAAAAAAAA==</rawdata>
+            <LastSessionState value="3" description="Complete Session"/>
+            <discStatus value="2" description="Finalized Disc"/>
+            <firstTrack value="1"/>
+            <sessionCount value="1"/>
+            <firstTrackOfLastSession value="1"/>
+            <lastTrackOfLastSession value="14"/>
+            <backgroundFormatStatus value="0" description="Disc is either blank or not background format capable"/>
+            <discType value="0" description="CD-DA or CD-ROM Disc"/>
+            <lastSessionLeadInStartAddress msf="255:255:255"/>
+            <lastLeadOutStartAddress msf="255:255:255"/>
+          </discInfoBlock>
+          <trackResourcesBlock><error>ReadDiscInfo returned 2147614754 (2147614754 0x80020022)</error></trackResourcesBlock>
+          <powResourcesBlocks><error>ReadDiscInfo returned 2147614754 (2147614754 0x80020022)</error></powResourcesBlocks>
+        </discInfo>
+        <trackInfoList>
+          <trackinfo>
+            <trackNumber value="1"/>
+            <sessionNumber value="1"/>
+            <trackMode value="0" description="2 audio channels without pre-emphasis, digital copy prohibited."/>
+            <dataMode value="15" description="Data block type unknown."/>
+            <packetSize blockCount="0"/>
+            <startAddress blockAddress="0" msf="0:00:00"/>
+            <size blockCount="3934" msf="0:52:34"/>
+            <freeSpace blockCount="0" msf="0:00:00"/>
+          </trackinfo>
+          <trackinfo>
+            <trackNumber value="2"/>
+            <sessionNumber value="1"/>
+            <trackMode value="0" description="2 audio channels without pre-emphasis, digital copy prohibited."/>
+            <dataMode value="15" description="Data block type unknown."/>
+            <packetSize blockCount="0"/>
+            <startAddress blockAddress="3934" msf="0:52:34"/>
+            <size blockCount="24196" msf="5:22:46"/>
+            <freeSpace blockCount="0" msf="0:00:00"/>
+          </trackinfo>
+          <trackinfo>
+            <trackNumber value="3"/>
+            <sessionNumber value="1"/>
+            <trackMode value="0" description="2 audio channels without pre-emphasis, digital copy prohibited."/>
+            <dataMode value="15" description="Data block type unknown."/>
+            <packetSize blockCount="0"/>
+            <startAddress blockAddress="28130" msf="6:15:05"/>
+            <size blockCount="23795" msf="5:17:20"/>
+            <freeSpace blockCount="0" msf="0:00:00"/>
+          </trackinfo>
+          <trackinfo>
+            <trackNumber value="4"/>
+            <sessionNumber value="1"/>
+            <trackMode value="0" description="2 audio channels without pre-emphasis, digital copy prohibited."/>
+            <dataMode value="15" description="Data block type unknown."/>
+            <packetSize blockCount="0"/>
+            <startAddress blockAddress="51925" msf="11:32:25"/>
+            <size blockCount="23676" msf="5:15:51"/>
+            <freeSpace blockCount="0" msf="0:00:00"/>
+          </trackinfo>
+          <trackinfo>
+            <trackNumber value="5"/>
+            <sessionNumber value="1"/>
+            <trackMode value="0" description="2 audio channels without pre-emphasis, digital copy prohibited."/>
+            <dataMode value="15" description="Data block type unknown."/>
+            <packetSize blockCount="0"/>
+            <startAddress blockAddress="75601" msf="16:48:01"/>
+            <size blockCount="28335" msf="6:17:60"/>
+            <freeSpace blockCount="0" msf="0:00:00"/>
+          </trackinfo>
+          <trackinfo>
+            <trackNumber value="6"/>
+            <sessionNumber value="1"/>
+            <trackMode value="0" description="2 audio channels without pre-emphasis, digital copy prohibited."/>
+            <dataMode value="15" description="Data block type unknown."/>
+            <packetSize blockCount="0"/>
+            <startAddress blockAddress="103936" msf="23:05:61"/>
+            <size blockCount="25809" msf="5:44:09"/>
+            <freeSpace blockCount="0" msf="0:00:00"/>
+          </trackinfo>
+          <trackinfo>
+            <trackNumber value="7"/>
+            <sessionNumber value="1"/>
+            <trackMode value="0" description="2 audio channels without pre-emphasis, digital copy prohibited."/>
+            <dataMode value="15" description="Data block type unknown."/>
+            <packetSize blockCount="0"/>
+            <startAddress blockAddress="129745" msf="28:49:70"/>
+            <size blockCount="14967" msf="3:19:42"/>
+            <freeSpace blockCount="0" msf="0:00:00"/>
+          </trackinfo>
+          <trackinfo>
+            <trackNumber value="8"/>
+            <sessionNumber value="1"/>
+            <trackMode value="0" description="2 audio channels without pre-emphasis, digital copy prohibited."/>
+            <dataMode value="15" description="Data block type unknown."/>
+            <packetSize blockCount="0"/>
+            <startAddress blockAddress="144712" msf="32:09:37"/>
+            <size blockCount="22705" msf="5:02:55"/>
+            <freeSpace blockCount="0" msf="0:00:00"/>
+          </trackinfo>
+          <trackinfo>
+            <trackNumber value="9"/>
+            <sessionNumber value="1"/>
+            <trackMode value="0" description="2 audio channels without pre-emphasis, digital copy prohibited."/>
+            <dataMode value="15" description="Data block type unknown."/>
+            <packetSize blockCount="0"/>
+            <startAddress blockAddress="167417" msf="37:12:17"/>
+            <size blockCount="22606" msf="5:01:31"/>
+            <freeSpace blockCount="0" msf="0:00:00"/>
+          </trackinfo>
+          <trackinfo>
+            <trackNumber value="10"/>
+            <sessionNumber value="1"/>
+            <trackMode value="0" description="2 audio channels without pre-emphasis, digital copy prohibited."/>
+            <dataMode value="15" description="Data block type unknown."/>
+            <packetSize blockCount="0"/>
+            <startAddress blockAddress="190023" msf="42:13:48"/>
+            <size blockCount="18570" msf="4:07:45"/>
+            <freeSpace blockCount="0" msf="0:00:00"/>
+          </trackinfo>
+          <trackinfo>
+            <trackNumber value="11"/>
+            <sessionNumber value="1"/>
+            <trackMode value="0" description="2 audio channels without pre-emphasis, digital copy prohibited."/>
+            <dataMode value="15" description="Data block type unknown."/>
+            <packetSize blockCount="0"/>
+            <startAddress blockAddress="208593" msf="46:21:18"/>
+            <size blockCount="20452" msf="4:32:52"/>
+            <freeSpace blockCount="0" msf="0:00:00"/>
+          </trackinfo>
+          <trackinfo>
+            <trackNumber value="12"/>
+            <sessionNumber value="1"/>
+            <trackMode value="0" description="2 audio channels without pre-emphasis, digital copy prohibited."/>
+            <dataMode value="15" description="Data block type unknown."/>
+            <packetSize blockCount="0"/>
+            <startAddress blockAddress="229045" msf="50:53:70"/>
+            <size blockCount="24865" msf="5:31:40"/>
+            <freeSpace blockCount="0" msf="0:00:00"/>
+          </trackinfo>
+          <trackinfo>
+            <trackNumber value="13"/>
+            <sessionNumber value="1"/>
+            <trackMode value="0" description="2 audio channels without pre-emphasis, digital copy prohibited."/>
+            <dataMode value="15" description="Data block type unknown."/>
+            <packetSize blockCount="0"/>
+            <startAddress blockAddress="253910" msf="56:25:35"/>
+            <size blockCount="18206" msf="4:02:56"/>
+            <freeSpace blockCount="0" msf="0:00:00"/>
+          </trackinfo>
+          <trackinfo>
+            <trackNumber value="14"/>
+            <sessionNumber value="1"/>
+            <trackMode value="0" description="2 audio channels without pre-emphasis, digital copy prohibited."/>
+            <dataMode value="15" description="Data block type unknown."/>
+            <packetSize blockCount="0"/>
+            <startAddress blockAddress="272116" msf="60:28:16"/>
+            <size blockCount="6676" msf="1:29:01"/>
+            <freeSpace blockCount="0" msf="0:00:00"/>
+          </trackinfo>
+        </trackInfoList>
+      </mediaInfo>
+      <mediaIsPresent/>
+      <trayState value="closed"/>
+    </deviceStatus>
+  </statusfordevice>
+</statusdoc>

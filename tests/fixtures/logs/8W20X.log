@@ -1,0 +1,229 @@
+=== 2026-09-29 18:04:54 ========================================================
+redumper (build: b753+d8fix)
+
+arguments: disc --drive=disk6 --image-name=8W20X --retries=100 --refine-subchannel
+
+drive information
+  path: disk6
+  inquiry: PLEXTOR - CD-R PX-W5224A (revision level: 1.04, vendor specific: 04/10/06 17:00)
+  configuration: PLEXTOR (read offset: +30, C2 shift: 294, pre-gap start: -75, read method: D8, sector order: DATA_C2_SUB)
+  profile: CD-ROM
+  read speed: <optimal>
+
+image path: .
+image name: 8W20X
+
+*** DUMP (time check: 0s)
+
+disc TOC:
+  track 01 { audio }
+    index 01 { LBA:      0, MSF: 00:02:00 }
+  track 02 { audio }
+    index 01 { LBA:   3934, MSF: 00:54:34 }
+  track 03 { audio }
+    index 01 { LBA:  28130, MSF: 06:17:05 }
+  track 04 { audio }
+    index 01 { LBA:  51925, MSF: 11:34:25 }
+  track 05 { audio }
+    index 01 { LBA:  75601, MSF: 16:50:01 }
+  track 06 { audio }
+    index 01 { LBA: 103936, MSF: 23:07:61 }
+  track 07 { audio }
+    index 01 { LBA: 129745, MSF: 28:51:70 }
+  track 08 { audio }
+    index 01 { LBA: 144712, MSF: 32:11:37 }
+  track 09 { audio }
+    index 01 { LBA: 167417, MSF: 37:14:17 }
+  track 10 { audio }
+    index 01 { LBA: 190023, MSF: 42:15:48 }
+  track 11 { audio }
+    index 01 { LBA: 208593, MSF: 46:23:18 }
+  track 12 { audio }
+    index 01 { LBA: 229045, MSF: 50:55:70 }
+  track 13 { audio }
+    index 01 { LBA: 253910, MSF: 56:27:35 }
+  track 14 { audio }
+    index 01 { LBA: 272116, MSF: 60:30:16 }
+  track AA { audio }
+    index 01 { LBA: 278792, MSF: 61:59:17 }
+
+media errors: 
+  SCSI: 0 samples
+  C2: 0 samples
+  Q: 129
+
+*** DUMP::EXTRA (time check: 270s)
+
+PLEXTOR: reading lead-in (retry: 1)
+PLEXTOR: lead-in found (LBA: [-150 .. 15], sectors: 3068)
+PLEXTOR: reading lead-in (retry: 2)
+PLEXTOR: lead-in found (LBA: [-150 .. 15], sectors: 3678)
+PLEXTOR: storing lead-in (LBA: [-150 .. 15], verified: yes)
+
+*** PROTECTION (time check: 24s)
+
+protection: none
+
+*** REFINE (time check: 0s)
+
+correction statistics: 
+  SCSI: 0 samples
+  C2: 0 samples
+  Q: 103 sectors
+
+*** DVDKEY (time check: 79s)
+
+
+*** SPLIT (time check: 0s)
+
+
+correcting P... done
+correcting Q... done
+
+final TOC:
+  track 01 { audio }
+    index 00 { LBA: [  -150 ..     -1], length:    150, MSF: 00:00:00-00:01:74 }
+    index 01 { LBA: [     0 ..   3933], length:   3934, MSF: 00:02:00-00:54:33 }
+  track 02 { audio }
+    index 01 { LBA: [  3934 ..  28129], length:  24196, MSF: 00:54:34-06:17:04 }
+  track 03 { audio }
+    index 01 { LBA: [ 28130 ..  51924], length:  23795, MSF: 06:17:05-11:34:24 }
+  track 04 { audio }
+    index 01 { LBA: [ 51925 ..  75600], length:  23676, MSF: 11:34:25-16:50:00 }
+  track 05 { audio }
+    index 01 { LBA: [ 75601 .. 103935], length:  28335, MSF: 16:50:01-23:07:60 }
+  track 06 { audio }
+    index 01 { LBA: [103936 .. 129744], length:  25809, MSF: 23:07:61-28:51:69 }
+  track 07 { audio }
+    index 01 { LBA: [129745 .. 144711], length:  14967, MSF: 28:51:70-32:11:36 }
+  track 08 { audio }
+    index 01 { LBA: [144712 .. 167416], length:  22705, MSF: 32:11:37-37:14:16 }
+  track 09 { audio }
+    index 01 { LBA: [167417 .. 190022], length:  22606, MSF: 37:14:17-42:15:47 }
+  track 10 { audio }
+    index 01 { LBA: [190023 .. 208592], length:  18570, MSF: 42:15:48-46:23:17 }
+  track 11 { audio }
+    index 01 { LBA: [208593 .. 229044], length:  20452, MSF: 46:23:18-50:55:69 }
+  track 12 { audio }
+    index 01 { LBA: [229045 .. 253909], length:  24865, MSF: 50:55:70-56:27:34 }
+  track 13 { audio }
+    index 01 { LBA: [253910 .. 272115], length:  18206, MSF: 56:27:35-60:30:15 }
+  track 14 { audio }
+    index 01 { LBA: [272116 .. 278791], length:   6676, MSF: 60:30:16-61:59:16 }
+  track AA { audio }
+    index 01 { LBA: [278792 .. 278890], length:     99, MSF: 61:59:17-62:00:40 }
+
+analyzing... done (time: 13s)
+
+non-zero  TOC sample range: [   -88200 .. +163929696]
+non-zero data sample range: [     +634 .. +163929684]
+Universal Hash (SHA-1): 1c0ecad91326f83551af3ae7e7ef8d7a5ea9c018
+
+Perfect Audio Offset (silence level: 0): [-88200 .. +634]
+fallback offset 0 applied
+disc write offset: +0
+
+checking tracks
+done
+
+writing tracks
+done
+
+CUE [8W20X.cue]:
+CATALOG 0602537454587
+TITLE "Hesitation Marks"
+PERFORMER "Nine Inch Nails"
+FILE "8W20X (Track 01).bin" BINARY
+  TRACK 01 AUDIO
+    TITLE "01. the eater of dreams"
+    ISRC USQX91301302
+    INDEX 01 00:00:00
+FILE "8W20X (Track 02).bin" BINARY
+  TRACK 02 AUDIO
+    TITLE "02. copy of a"
+    ISRC USQX91301303
+    INDEX 01 00:00:00
+FILE "8W20X (Track 03).bin" BINARY
+  TRACK 03 AUDIO
+    TITLE "03. came back haunted"
+    ISRC USQX91301286
+    INDEX 01 00:00:00
+FILE "8W20X (Track 04).bin" BINARY
+  TRACK 04 AUDIO
+    TITLE "04. find my way"
+    ISRC USQX91301304
+    INDEX 01 00:00:00
+FILE "8W20X (Track 05).bin" BINARY
+  TRACK 05 AUDIO
+    TITLE "05. all time low"
+    ISRC USQX91301305
+    INDEX 01 00:00:00
+FILE "8W20X (Track 06).bin" BINARY
+  TRACK 06 AUDIO
+    TITLE "06. disappointed"
+    ISRC USQX91301306
+    INDEX 01 00:00:00
+FILE "8W20X (Track 07).bin" BINARY
+  TRACK 07 AUDIO
+    TITLE "07. everything"
+    ISRC USQX91301307
+    INDEX 01 00:00:00
+FILE "8W20X (Track 08).bin" BINARY
+  TRACK 08 AUDIO
+    TITLE "08. satellite"
+    ISRC USQX91301308
+    INDEX 01 00:00:00
+FILE "8W20X (Track 09).bin" BINARY
+  TRACK 09 AUDIO
+    TITLE "09. various methods of escape"
+    ISRC USQX91301309
+    INDEX 01 00:00:00
+FILE "8W20X (Track 10).bin" BINARY
+  TRACK 10 AUDIO
+    TITLE "10. running"
+    ISRC USQX91301310
+    INDEX 01 00:00:00
+FILE "8W20X (Track 11).bin" BINARY
+  TRACK 11 AUDIO
+    TITLE "11. i would for you"
+    ISRC USQX91301311
+    INDEX 01 00:00:00
+FILE "8W20X (Track 12).bin" BINARY
+  TRACK 12 AUDIO
+    TITLE "12.  in two"
+    ISRC USQX91301312
+    INDEX 01 00:00:00
+FILE "8W20X (Track 13).bin" BINARY
+  TRACK 13 AUDIO
+    TITLE "13. while i'm still here"
+    ISRC USQX91301313
+    INDEX 01 00:00:00
+FILE "8W20X (Track 14).bin" BINARY
+  TRACK 14 AUDIO
+    TITLE "14. black noise"
+    ISRC USQX91301314
+    INDEX 01 00:00:00
+
+
+*** HASH (time check: 26s)
+
+dat:
+<rom name="8W20X (Track 01).bin" size="9252768" crc="fec0d558" md5="5012f364f1275297380a35572e4ec9b5" sha1="acaa35a1edeab7e9b6be9839c7ab047a27e54eed" />
+<rom name="8W20X (Track 02).bin" size="56908992" crc="0a058541" md5="334f10cf9bc1f19f3bb21c2c37e352e6" sha1="f07bfd56edb94eec4c16e4520f430cdc40e02e84" />
+<rom name="8W20X (Track 03).bin" size="55965840" crc="36594db3" md5="da19cc2f274231c922fb9be428b96cb7" sha1="524681597e75c240fbfc461334e4077cb0fd932f" />
+<rom name="8W20X (Track 04).bin" size="55685952" crc="b78710a3" md5="886ae097d752b0d21a7e12eacd0bed21" sha1="9fc47b15ae8af99d0941ff50a7682fb96a512f47" />
+<rom name="8W20X (Track 05).bin" size="66643920" crc="1d2f1677" md5="33882b763a570296dddd6ee9c5e1d606" sha1="cf3346596562ce89a5db59c7ed31a86df94c85b9" />
+<rom name="8W20X (Track 06).bin" size="60702768" crc="cb71ae83" md5="cc26d8339d0e4568c86732c29a8397fa" sha1="947d289e33fa22262ef750291daceaabe5ad2668" />
+<rom name="8W20X (Track 07).bin" size="35202384" crc="ba6bfd88" md5="c601cba2673b49264288f1a6e9f0f3d2" sha1="25d60476a6be1f11a5f58bf44982aae5b96382f2" />
+<rom name="8W20X (Track 08).bin" size="53402160" crc="a35a9760" md5="89a22592b49ccccd3ee9970ac9e7f5a2" sha1="af1b695a8642848b8386b195562ff266f96fdb61" />
+<rom name="8W20X (Track 09).bin" size="53169312" crc="b0cf6eb3" md5="d57ba93dfaec6470f3361408c17a3edb" sha1="35bafc781dd02d11a9343aa17583989d1be54fd2" />
+<rom name="8W20X (Track 10).bin" size="43676640" crc="36d77341" md5="31a1f11ca6c64897713a734e22bac4c5" sha1="7137aa3a9e7a217c1fd6f5ca6cc2025841fba4ff" />
+<rom name="8W20X (Track 11).bin" size="48103104" crc="9fc6d70b" md5="0f7a8d8dec41677d76f3e3644e375684" sha1="e6c36df26068d2f4d9e112cbeb47498a8b8ec4f7" />
+<rom name="8W20X (Track 12).bin" size="58482480" crc="da1f3c99" md5="14866f9688a12114f3523cb9cf168123" sha1="44ee2c6546753877eef1987608b98221a7dda61b" />
+<rom name="8W20X (Track 13).bin" size="42820512" crc="e9238632" md5="7ff6516901e17f9bdcbae1b2e4d498f5" sha1="d1fdee8506ef890abfc4d2c7bbe0d642489989c6" />
+<rom name="8W20X (Track 14).bin" size="15701952" crc="76ada5bd" md5="3ca9fe78972ea2bb45c0cd48823ef4b4" sha1="7b7e7f781dde53d0dd81c7e34cfbd84e5eafcb16" />
+
+*** INFO (time check: 0s)
+
+
+*** END (time check: 0s)

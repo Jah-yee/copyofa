@@ -1,0 +1,197 @@
+=== 2026-09-30 07:23:56 ========================================================
+redumper (build: b753+d8fix)
+
+arguments: disc --drive=disk6 --image-name=QUAKE --retries=20 --refine-subchannel
+
+drive information
+  path: disk6
+  inquiry: PLEXTOR - CD-R PX-W5224A (revision level: 1.04, vendor specific: 04/10/06 17:00)
+  configuration: PLEXTOR (read offset: +30, C2 shift: 294, pre-gap start: -75, read method: D8, sector order: DATA_C2_SUB)
+  profile: CD-ROM
+  read speed: <optimal>
+
+image path: .
+image name: QUAKE
+
+*** DUMP (time check: 0s)
+
+disc TOC:
+  track 01 {  data }
+    index 01 { LBA:      0, MSF: 00:02:00 }
+  track 02 { audio }
+    index 01 { LBA:  54420, MSF: 12:07:45 }
+  track 03 { audio }
+    index 01 { LBA:  77565, MSF: 17:16:15 }
+  track 04 { audio }
+    index 01 { LBA:  88516, MSF: 19:42:16 }
+  track 05 { audio }
+    index 01 { LBA: 126035, MSF: 28:02:35 }
+  track 06 { audio }
+    index 01 { LBA: 153439, MSF: 34:07:64 }
+  track 07 { audio }
+    index 01 { LBA: 186783, MSF: 41:32:33 }
+  track 08 { audio }
+    index 01 { LBA: 225650, MSF: 50:10:50 }
+  track 09 { audio }
+    index 01 { LBA: 250844, MSF: 55:46:44 }
+  track 10 { audio }
+    index 01 { LBA: 280013, MSF: 62:15:38 }
+  track 11 { audio }
+    index 01 { LBA: 295955, MSF: 65:48:05 }
+  track AA { audio }
+    index 01 { LBA: 319761, MSF: 71:05:36 }
+
+media errors: 
+  SCSI: 0 samples
+  C2: 0 samples
+  Q: 386
+
+*** DUMP::EXTRA (time check: 316s)
+
+PLEXTOR: reading lead-in (retry: 1)
+PLEXTOR: lead-in found (LBA: [-150 .. 15], sectors: 3049)
+PLEXTOR: reading lead-in (retry: 2)
+PLEXTOR: lead-in not identified
+PLEXTOR: reading lead-in (retry: 3)
+PLEXTOR: lead-in found (LBA: [-150 .. 15], sectors: 2396)
+PLEXTOR: storing lead-in (LBA: [-150 .. 15], verified: yes)
+
+*** PROTECTION (time check: 84s)
+
+protection: none
+
+*** REFINE (time check: 0s)
+
+disc write offset: +0
+
+correction statistics: 
+  SCSI: 0 samples
+  C2: 0 samples
+  Q: 109 sectors
+
+*** DVDKEY (time check: 159s)
+
+
+*** SPLIT (time check: 0s)
+
+
+correcting P... done
+correcting Q... done
+
+final TOC:
+  track 01 {  data }
+    index 00 { LBA: [  -150 ..     -1], length:    150, MSF: 00:00:00-00:01:74 }
+    index 01 { LBA: [     0 ..  54269], length:  54270, MSF: 00:02:00-12:05:44 }
+  track 02 { audio }
+    index 00 { LBA: [ 54270 ..  54419], length:    150, MSF: 12:05:45-12:07:44 }
+    index 01 { LBA: [ 54420 ..  77564], length:  23145, MSF: 12:07:45-17:16:14 }
+  track 03 { audio }
+    index 01 { LBA: [ 77565 ..  88515], length:  10951, MSF: 17:16:15-19:42:15 }
+  track 04 { audio }
+    index 01 { LBA: [ 88516 .. 126034], length:  37519, MSF: 19:42:16-28:02:34 }
+  track 05 { audio }
+    index 01 { LBA: [126035 .. 153438], length:  27404, MSF: 28:02:35-34:07:63 }
+  track 06 { audio }
+    index 01 { LBA: [153439 .. 186782], length:  33344, MSF: 34:07:64-41:32:32 }
+  track 07 { audio }
+    index 01 { LBA: [186783 .. 225649], length:  38867, MSF: 41:32:33-50:10:49 }
+  track 08 { audio }
+    index 01 { LBA: [225650 .. 250843], length:  25194, MSF: 50:10:50-55:46:43 }
+  track 09 { audio }
+    index 01 { LBA: [250844 .. 280012], length:  29169, MSF: 55:46:44-62:15:37 }
+  track 10 { audio }
+    index 01 { LBA: [280013 .. 295954], length:  15942, MSF: 62:15:38-65:48:04 }
+  track 11 { audio }
+    index 01 { LBA: [295955 .. 319760], length:  23806, MSF: 65:48:05-71:05:35 }
+  track AA { audio }
+    index 01 { LBA: [319761 .. 319859], length:     99, MSF: 71:05:36-71:06:59 }
+
+analyzing... done (time: 16s)
+
+data disc detected, offset configuration: 
+  LBA:   -150 ->   -150, MSF: 00:00:00, count:  54420, offset: +0
+
+non-zero  TOC sample range: [   -88200 .. +188019468]
+non-zero data sample range: [     +588 .. +187841112]
+Universal Hash (SHA-1): 73dab31f8c1bfaece39d1f993f0e6cf5d1a9ae20
+
+disc write offset: +0
+
+checking tracks
+done
+
+writing tracks
+done
+
+CUE [QUAKE.cue]:
+CATALOG 0000000000000
+FILE "QUAKE (Track 01).bin" BINARY
+  TRACK 01 MODE1/2352
+    INDEX 01 00:00:00
+FILE "QUAKE (Track 02).bin" BINARY
+  TRACK 02 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 00:02:00
+FILE "QUAKE (Track 03).bin" BINARY
+  TRACK 03 AUDIO
+    INDEX 01 00:00:00
+FILE "QUAKE (Track 04).bin" BINARY
+  TRACK 04 AUDIO
+    INDEX 01 00:00:00
+FILE "QUAKE (Track 05).bin" BINARY
+  TRACK 05 AUDIO
+    INDEX 01 00:00:00
+FILE "QUAKE (Track 06).bin" BINARY
+  TRACK 06 AUDIO
+    INDEX 01 00:00:00
+FILE "QUAKE (Track 07).bin" BINARY
+  TRACK 07 AUDIO
+    INDEX 01 00:00:00
+FILE "QUAKE (Track 08).bin" BINARY
+  TRACK 08 AUDIO
+    INDEX 01 00:00:00
+FILE "QUAKE (Track 09).bin" BINARY
+  TRACK 09 AUDIO
+    INDEX 01 00:00:00
+FILE "QUAKE (Track 10).bin" BINARY
+  TRACK 10 AUDIO
+    INDEX 01 00:00:00
+FILE "QUAKE (Track 11).bin" BINARY
+  TRACK 11 AUDIO
+    INDEX 01 00:00:00
+
+
+*** HASH (time check: 30s)
+
+dat:
+<rom name="QUAKE (Track 01).bin" size="127643040" crc="2feeb148" md5="a05b65b3d0ab11658d4c6b0eab2c477d" sha1="7fc55d8d5ed46d403865e9575fdf9e5ea8577fb2" />
+<rom name="QUAKE (Track 02).bin" size="54789840" crc="67efe455" md5="3e8624348742e2e8910bc3755f0bd89c" sha1="a774ae94e4d3e5aa40af7d89d4a4d836b5e048d6" />
+<rom name="QUAKE (Track 03).bin" size="25756752" crc="f4aaa102" md5="9aab12b92d419aba933b77afd883a967" sha1="b4fd5e03bcfd8cf48a05df591f3ecd68fbf63441" />
+<rom name="QUAKE (Track 04).bin" size="88244688" crc="9283dfd1" md5="3e6307856660a5b6fd5b3278d886af27" sha1="b4f056919c641b88323e193c79ca321aab9e765e" />
+<rom name="QUAKE (Track 05).bin" size="64454208" crc="835c0b4d" md5="4a3991fc62759dc1e9d6ccb71af0b979" sha1="0449d982d7c2431219cd4c3dbd549d1079b875dd" />
+<rom name="QUAKE (Track 06).bin" size="78425088" crc="45ef4d4e" md5="efc86b5cb5629afd530014218a6ecf5b" sha1="8af60fa4410d47782496f9d8410b67c0bcaac2f6" />
+<rom name="QUAKE (Track 07).bin" size="91415184" crc="98e03308" md5="409844664108aff6dfd88712ffb16f3c" sha1="d3010fb8471dbfef7b58866e7d07c463e6b18fe0" />
+<rom name="QUAKE (Track 08).bin" size="59256288" crc="988e66fc" md5="245b25264de2f4b3a93c4268bd7aef42" sha1="6ee57eac5689b23fd2c7d510dd0ec67be77736b8" />
+<rom name="QUAKE (Track 09).bin" size="68605488" crc="2f82d798" md5="ab2c3a20d24afe0fe17bbb87d907308b" sha1="35cb451d09080d2353e46b31c4085c9800ca045f" />
+<rom name="QUAKE (Track 10).bin" size="37495584" crc="740c24c4" md5="aa05b17786610a65b3926d8badb5934e" sha1="ce11f8202191dc7137147bcd130f733490367b1f" />
+<rom name="QUAKE (Track 11).bin" size="55991712" crc="8fa294f8" md5="086b4755194e832f85507aecbc7ac301" sha1="52d09280620c37f09f76c2230355ea6bed690483" />
+
+*** INFO (time check: 0s)
+
+CD-ROM [QUAKE (Track 01).bin]:
+  sectors count: 54270
+  mode1 sectors: 54270
+
+  REDUMP.INFO errors: 0
+
+ISO9660 [QUAKE (Track 01).bin]:
+  volume identifier: QUAKE101
+  PVD:
+0320 : 20 20 20 20 20 20 20 20  20 20 20 20 20 31 39 39                199
+0330 : 36 30 37 33 31 30 34 32  37 34 32 30 30 30 31 39   6073104274200019
+0340 : 39 36 30 37 33 31 30 34  32 37 34 32 30 30 30 30   9607310427420000
+0350 : 30 30 30 30 30 30 30 30  30 30 30 30 30 30 30 30   0000000000000000
+0360 : 31 39 39 36 30 37 33 31  30 34 32 37 34 32 30 30   1996073104274200
+0370 : 30 01 00 00 00 00 00 00  00 00 00 00 00 00 00 00   0...............
+
+*** END (time check: 0s)

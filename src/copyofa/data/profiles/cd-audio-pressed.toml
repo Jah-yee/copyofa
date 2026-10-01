@@ -1,0 +1,38 @@
+name = "cd-audio-pressed"
+version = "0.1"
+status = "draft"
+family = "CD"
+description = "Pressed audio CDs, single session"
+strict_q = true
+
+[match]
+prefixes = ["CD"]
+media_types = ["CD-ROM"]
+sessions = 1
+data_tracks = false
+disc_status = 2
+
+[[stages]]
+command = "dump"
+
+[[stages]]
+command = "dump::extra"
+
+[[stages]]
+command = "protection"
+
+[[stages]]
+command = "refine"
+label = "c2"
+options = ["--retries=100"]
+
+[[stages]]
+command = "refine"
+label = "q"
+options = ["--retries=30", "--refine-subchannel"]
+
+[[stages]]
+command = "refine"
+label = "slow"
+options = ["--retries=100", "--speed=8"]
+when = "c2_or_scsi_remaining"

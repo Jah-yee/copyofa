@@ -1,0 +1,1346 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://copyofa/medium-0.1.schema.json",
+  "title": "coa medium metadata 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version",
+    "schema_version",
+    "holon_id",
+    "medium_id",
+    "position",
+    "media_list",
+    "partial",
+    "created_at",
+    "outcome",
+    "tool",
+    "profile",
+    "drive",
+    "medium",
+    "stages",
+    "resumes",
+    "acquisition_errors",
+    "remaining_errors",
+    "lba_start",
+    "write_offset_samples",
+    "write_offset",
+    "nonzero_sample_ranges",
+    "universal_hash_sha1",
+    "mcn",
+    "cd_text",
+    "sessions",
+    "tracks",
+    "raw_files",
+    "redundancy",
+    "gaps",
+    "accepted_issues",
+    "issues",
+    "log_messages",
+    "checks",
+    "external_verification",
+    "revisions"
+  ],
+  "properties": {
+    "format_version": {
+      "const": "0.1",
+      "x-coa-class": "recorded",
+      "description": "archive format version"
+    },
+    "schema_version": {
+      "const": "0.1",
+      "x-coa-class": "recorded",
+      "description": "metadata schema version"
+    },
+    "holon_id": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{5}$",
+      "x-coa-class": "recorded",
+      "description": "product ID"
+    },
+    "medium_id": {
+      "type": "string",
+      "pattern": "^[A-Z]+[1-9][0-9]*[A-Z]?$",
+      "x-coa-class": "recorded",
+      "description": "medium ID"
+    },
+    "position": {
+      "type": "integer",
+      "minimum": 1,
+      "x-coa-class": "recorded",
+      "description": "1-based position in media_list"
+    },
+    "media_list": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "x-coa-class": "recorded",
+      "description": "declared media list when this medium was published (snapshot)"
+    },
+    "partial": {
+      "type": ["object", "null"],
+      "properties": {
+        "prefix": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": ["prefix", "reason"],
+      "additionalProperties": false,
+      "x-coa-class": "recorded",
+      "description": "partial archive declared by the medium ID prefix"
+    },
+    "created_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+      "x-coa-class": "recorded",
+      "description": "publication time"
+    },
+    "outcome": {
+      "enum": ["PASS", "PASS WITH ACCEPTED ISSUES", "FAIL"],
+      "x-coa-class": "recorded",
+      "description": "run outcome"
+    },
+    "tool": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "const": "coa"
+        },
+        "version": {
+          "type": "string"
+        },
+        "host_os": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "machine": {
+              "type": "string"
+            }
+          },
+          "required": ["name", "version", "machine"],
+          "additionalProperties": false
+        },
+        "python": {
+          "type": "string"
+        },
+        "dependencies": {
+          "type": "object",
+          "properties": {
+            "redumper": {
+              "type": ["string", "null"]
+            },
+            "flac": {
+              "type": ["string", "null"]
+            },
+            "xz": {
+              "type": ["string", "null"]
+            },
+            "zstd": {
+              "type": ["string", "null"]
+            },
+            "par2": {
+              "type": ["string", "null"]
+            }
+          },
+          "required": ["redumper", "flac", "xz", "zstd", "par2"],
+          "additionalProperties": false
+        },
+        "config": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "host_os",
+        "python",
+        "dependencies",
+        "config"
+      ],
+      "additionalProperties": false,
+      "x-coa-class": "recorded",
+      "description": "tool, host and dependency versions, configuration"
+    },
+    "profile": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "approved": {
+          "type": "boolean"
+        },
+        "permanence": {
+          "enum": ["permanent", "provisional"]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "stages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "command": {
+                "type": "string"
+              },
+              "label": {
+                "type": ["string", "null"]
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "when": {
+                "type": ["string", "null"]
+              }
+            },
+            "required": ["command", "label", "options", "when"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "status",
+        "approved",
+        "permanence",
+        "reason",
+        "stages"
+      ],
+      "additionalProperties": false,
+      "x-coa-class": "recorded",
+      "description": "acquisition profile and permanence"
+    },
+    "drive": {
+      "type": "object",
+      "properties": {
+        "vendor": {
+          "type": ["string", "null"]
+        },
+        "product": {
+          "type": ["string", "null"]
+        },
+        "firmware": {
+          "type": ["string", "null"]
+        },
+        "vendor_specific": {
+          "type": ["string", "null"]
+        },
+        "drive_type": {
+          "type": ["string", "null"]
+        },
+        "read_offset": {
+          "type": ["integer", "null"]
+        },
+        "c2_shift": {
+          "type": ["integer", "null"]
+        },
+        "pregap_start": {
+          "type": ["integer", "null"]
+        },
+        "read_method": {
+          "type": ["string", "null"]
+        },
+        "sector_order": {
+          "type": ["string", "null"]
+        },
+        "configuration_line": {
+          "type": ["string", "null"]
+        },
+        "connection": {
+          "type": "object",
+          "properties": {
+            "interconnect": {
+              "type": ["string", "null"]
+            },
+            "bridge": {
+              "type": ["object", "null"],
+              "properties": {
+                "vendor_id": {
+                  "type": "string"
+                },
+                "product_id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": ["string", "null"]
+                }
+              },
+              "required": ["vendor_id", "product_id", "name"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["interconnect", "bridge"],
+          "additionalProperties": false
+        },
+        "drive_test": {
+          "type": "object",
+          "properties": {
+            "record": {
+              "type": ["string", "null"]
+            },
+            "plextor_leadin": {
+              "enum": ["yes", "no", "skipped", null]
+            }
+          },
+          "required": ["record", "plextor_leadin"],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "vendor",
+        "product",
+        "firmware",
+        "vendor_specific",
+        "drive_type",
+        "read_offset",
+        "c2_shift",
+        "pregap_start",
+        "read_method",
+        "sector_order",
+        "configuration_line",
+        "connection",
+        "drive_test"
+      ],
+      "additionalProperties": false,
+      "x-coa-class": "re-derivable",
+      "description": "drive identification from the first dump record and preflight records"
+    },
+    "medium": {
+      "type": "object",
+      "properties": {
+        "family": {
+          "type": ["string", "null"]
+        },
+        "media_type": {
+          "type": ["string", "null"]
+        },
+        "recordable": {
+          "type": ["boolean", "null"]
+        },
+        "rewritable": {
+          "type": ["boolean", "null"]
+        },
+        "layers": {
+          "type": "integer"
+        },
+        "disc_status": {
+          "type": ["integer", "null"]
+        },
+        "last_session_state": {
+          "type": ["integer", "null"]
+        },
+        "sessions": {
+          "type": ["integer", "null"]
+        },
+        "toc_source": {
+          "type": "string"
+        },
+        "protection": {
+          "type": ["string", "null"]
+        }
+      },
+      "required": [
+        "family",
+        "media_type",
+        "recordable",
+        "rewritable",
+        "layers",
+        "disc_status",
+        "last_session_state",
+        "sessions",
+        "toc_source",
+        "protection"
+      ],
+      "additionalProperties": false,
+      "x-coa-class": "re-derivable",
+      "description": "medium identification"
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nn": {
+            "type": ["integer", "null"]
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": ["preflight", "acquisition", "verification"]
+          },
+          "label": {
+            "type": ["string", "null"]
+          },
+          "command_line": {
+            "type": "string"
+          },
+          "argv": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "started_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+          },
+          "ended_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+          },
+          "duration_s": {
+            "type": ["number", "null"]
+          },
+          "exit_code": {
+            "type": "integer"
+          },
+          "interrupted": {
+            "type": "boolean"
+          },
+          "record": {
+            "type": "string"
+          },
+          "cached_at": {
+            "type": ["string", "null"],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+          }
+        },
+        "required": [
+          "nn",
+          "name",
+          "kind",
+          "label",
+          "command_line",
+          "argv",
+          "started_at",
+          "ended_at",
+          "duration_s",
+          "exit_code",
+          "interrupted",
+          "record",
+          "cached_at"
+        ],
+        "additionalProperties": false
+      },
+      "x-coa-class": "recorded",
+      "description": "preflight commands and redumper stages in run order"
+    },
+    "resumes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "resumed_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+          },
+          "stage": {
+            "type": ["string", "null"]
+          },
+          "previous_nn": {
+            "type": ["integer", "null"]
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": ["resumed_at", "stage", "previous_nn", "reason"],
+        "additionalProperties": false
+      },
+      "x-coa-class": "recorded",
+      "description": "resumes of the acquisition"
+    },
+    "acquisition_errors": {
+      "type": "object",
+      "properties": {
+        "first_pass": {
+          "type": ["object", "null"],
+          "properties": {
+            "scsi_samples": {
+              "type": ["integer", "null"]
+            },
+            "c2_samples": {
+              "type": ["integer", "null"]
+            },
+            "q_sectors": {
+              "type": ["integer", "null"]
+            },
+            "q_program_sectors": {
+              "type": ["integer", "null"]
+            },
+            "q_leadout_sectors": {
+              "type": ["integer", "null"]
+            },
+            "program_sectors": {
+              "type": ["integer", "null"]
+            },
+            "q_program_rate": {
+              "type": ["number", "null"]
+            }
+          },
+          "required": [
+            "scsi_samples",
+            "c2_samples",
+            "q_sectors",
+            "q_program_sectors",
+            "q_leadout_sectors",
+            "program_sectors",
+            "q_program_rate"
+          ],
+          "additionalProperties": false
+        },
+        "passes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "nn": {
+                "type": "integer"
+              },
+              "label": {
+                "type": ["string", "null"]
+              },
+              "retries": {
+                "type": ["integer", "null"]
+              },
+              "speed": {
+                "type": ["number", "null"]
+              },
+              "refine_subchannel": {
+                "type": "boolean"
+              },
+              "drive": {
+                "type": "string"
+              },
+              "before": {
+                "type": ["object", "null"],
+                "properties": {
+                  "scsi_samples": {
+                    "type": ["integer", "null"]
+                  },
+                  "c2_samples": {
+                    "type": ["integer", "null"]
+                  },
+                  "q_sectors": {
+                    "type": ["integer", "null"]
+                  },
+                  "q_program_sectors": {
+                    "type": ["integer", "null"]
+                  },
+                  "q_leadout_sectors": {
+                    "type": ["integer", "null"]
+                  }
+                },
+                "required": [
+                  "scsi_samples",
+                  "c2_samples",
+                  "q_sectors",
+                  "q_program_sectors",
+                  "q_leadout_sectors"
+                ],
+                "additionalProperties": false
+              },
+              "after": {
+                "type": ["object", "null"],
+                "properties": {
+                  "scsi_samples": {
+                    "type": ["integer", "null"]
+                  },
+                  "c2_samples": {
+                    "type": ["integer", "null"]
+                  },
+                  "q_sectors": {
+                    "type": ["integer", "null"]
+                  },
+                  "q_program_sectors": {
+                    "type": ["integer", "null"]
+                  },
+                  "q_leadout_sectors": {
+                    "type": ["integer", "null"]
+                  }
+                },
+                "required": [
+                  "scsi_samples",
+                  "c2_samples",
+                  "q_sectors",
+                  "q_program_sectors",
+                  "q_leadout_sectors"
+                ],
+                "additionalProperties": false
+              },
+              "reported": {
+                "type": ["object", "null"],
+                "properties": {
+                  "scsi_samples": {
+                    "type": ["integer", "null"]
+                  },
+                  "c2_samples": {
+                    "type": ["integer", "null"]
+                  },
+                  "q_sectors": {
+                    "type": ["integer", "null"]
+                  },
+                  "q_program_sectors": {
+                    "type": ["integer", "null"]
+                  },
+                  "q_leadout_sectors": {
+                    "type": ["integer", "null"]
+                  }
+                },
+                "required": [
+                  "scsi_samples",
+                  "c2_samples",
+                  "q_sectors",
+                  "q_program_sectors",
+                  "q_leadout_sectors"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "nn",
+              "label",
+              "retries",
+              "speed",
+              "refine_subchannel",
+              "drive",
+              "before",
+              "after",
+              "reported"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "cumulative_max_attempts": {
+          "type": "object",
+          "properties": {
+            "c2_sectors": {
+              "type": "integer"
+            },
+            "q_sectors": {
+              "type": "integer"
+            }
+          },
+          "required": ["c2_sectors", "q_sectors"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["first_pass", "passes", "cumulative_max_attempts"],
+      "additionalProperties": false,
+      "x-coa-class": "recorded",
+      "description": "error counts after the dump and each refine pass"
+    },
+    "remaining_errors": {
+      "type": "object",
+      "properties": {
+        "scsi_samples": {
+          "type": ["integer", "null"]
+        },
+        "c2_samples": {
+          "type": ["integer", "null"]
+        },
+        "q_program_sectors": {
+          "type": ["integer", "null"]
+        },
+        "q_leadout_sectors": {
+          "type": ["integer", "null"]
+        },
+        "q_runs": {
+          "type": "array",
+          "items": {
+            "type": ["array", "null"],
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      },
+      "required": [
+        "scsi_samples",
+        "c2_samples",
+        "q_program_sectors",
+        "q_leadout_sectors",
+        "q_runs"
+      ],
+      "additionalProperties": false,
+      "x-coa-class": "re-derivable",
+      "description": "errors left in the final raw files"
+    },
+    "lba_start": {
+      "const": -45150,
+      "x-coa-class": "re-derivable",
+      "description": "first LBA of .scram/.subcode"
+    },
+    "write_offset_samples": {
+      "type": "integer",
+      "x-coa-class": "re-derivable",
+      "description": "disc write offset chosen by redumper split"
+    },
+    "write_offset": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "type": ["string", "null"]
+        },
+        "method_line": {
+          "type": ["string", "null"]
+        },
+        "perfect_audio_offset": {
+          "type": ["object", "null"],
+          "properties": {
+            "silence_level": {
+              "type": "integer"
+            },
+            "ranges": {
+              "type": "array",
+              "items": {
+                "type": ["array", "null"],
+                "items": {
+                  "type": "integer"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
+          },
+          "required": ["silence_level", "ranges"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["method", "method_line", "perfect_audio_offset"],
+      "additionalProperties": false,
+      "x-coa-class": "re-derivable",
+      "description": "how the write offset was chosen"
+    },
+    "nonzero_sample_ranges": {
+      "type": "object",
+      "properties": {
+        "toc": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "data": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "required": ["toc", "data"],
+      "additionalProperties": false,
+      "x-coa-class": "re-derivable",
+      "description": "non-zero sample ranges reported by split"
+    },
+    "universal_hash_sha1": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{40}$",
+      "x-coa-class": "re-derivable",
+      "description": "redumper Universal Hash, null when skipped"
+    },
+    "mcn": {
+      "type": ["string", "null"],
+      "x-coa-class": "re-derivable",
+      "description": "media catalog number"
+    },
+    "cd_text": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": ["field", "value"],
+        "additionalProperties": false
+      },
+      "x-coa-class": "re-derivable",
+      "description": "disc CD-TEXT"
+    },
+    "sessions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer"
+          },
+          "first_track": {
+            "type": ["integer", "null"]
+          },
+          "last_track": {
+            "type": ["integer", "null"]
+          },
+          "lead_in": {
+            "type": "object",
+            "properties": {
+              "captured": {
+                "type": "boolean"
+              },
+              "stored_range": {
+                "type": ["array", "null"],
+                "items": {
+                  "type": "integer"
+                }
+              },
+              "verified": {
+                "type": "boolean"
+              },
+              "attempts": {
+                "type": "integer"
+              }
+            },
+            "required": ["captured", "stored_range", "verified", "attempts"],
+            "additionalProperties": false
+          },
+          "pregap_sectors": {
+            "type": "integer"
+          },
+          "leadout_lba": {
+            "type": ["integer", "null"]
+          },
+          "leadout_sectors_read": {
+            "type": ["integer", "null"]
+          },
+          "cue_rem": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "number",
+          "first_track",
+          "last_track",
+          "lead_in",
+          "pregap_sectors",
+          "leadout_lba",
+          "leadout_sectors_read",
+          "cue_rem"
+        ],
+        "additionalProperties": false
+      },
+      "x-coa-class": "re-derivable",
+      "description": "sessions with lead-in and lead-out details"
+    },
+    "tracks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer"
+          },
+          "session": {
+            "type": "integer"
+          },
+          "type": {
+            "enum": ["audio", "data", null]
+          },
+          "cue_type": {
+            "type": "string"
+          },
+          "start_lba": {
+            "type": ["integer", "null"]
+          },
+          "length_sectors": {
+            "type": ["integer", "null"]
+          },
+          "indices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "index": {
+                  "type": "integer"
+                },
+                "lba": {
+                  "type": "integer"
+                },
+                "length": {
+                  "type": ["integer", "null"]
+                }
+              },
+              "required": ["index", "lba", "length"],
+              "additionalProperties": false
+            }
+          },
+          "flags": {
+            "type": "object",
+            "properties": {
+              "pre_emphasis": {
+                "type": "boolean"
+              },
+              "digital_copy": {
+                "type": "boolean"
+              },
+              "four_channel": {
+                "type": "boolean"
+              }
+            },
+            "required": ["pre_emphasis", "digital_copy", "four_channel"],
+            "additionalProperties": false
+          },
+          "isrc": {
+            "type": ["string", "null"]
+          },
+          "cd_text": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                }
+              },
+              "required": ["field", "value"],
+              "additionalProperties": false
+            }
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "hashes": {
+            "type": ["object", "null"],
+            "properties": {
+              "size": {
+                "type": "integer"
+              },
+              "crc32": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{8}$"
+              },
+              "md5": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{32}$"
+              },
+              "sha1": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              }
+            },
+            "required": ["size", "crc32", "md5", "sha1"],
+            "additionalProperties": false
+          },
+          "errors": {
+            "type": ["object", "null"],
+            "properties": {
+              "skip_sectors": {
+                "type": "integer"
+              },
+              "c2_sectors": {
+                "type": "integer"
+              },
+              "skip_samples": {
+                "type": "integer"
+              },
+              "c2_samples": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "skip_sectors",
+              "c2_sectors",
+              "skip_samples",
+              "c2_samples"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "number",
+          "session",
+          "type",
+          "cue_type",
+          "start_lba",
+          "length_sectors",
+          "indices",
+          "flags",
+          "isrc",
+          "cd_text",
+          "file_name",
+          "hashes",
+          "errors"
+        ],
+        "additionalProperties": false
+      },
+      "x-coa-class": "re-derivable",
+      "description": "track files: positions, flags, ISRC, canonical hashes, errors"
+    },
+    "raw_files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "stored_as": {
+            "type": "string",
+            "pattern": "\\.(flac|xz|zst)$"
+          }
+        },
+        "required": ["name", "size", "sha256", "stored_as"],
+        "additionalProperties": false
+      },
+      "x-coa-class": "re-derivable",
+      "description": "every raw file (redumper output and session records) with its SHA-256 and archived name"
+    },
+    "redundancy": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "percent": {
+          "type": ["integer", "null"]
+        },
+        "default_enabled": {
+          "type": ["boolean", "null"]
+        },
+        "default_reason": {
+          "type": ["string", "null"]
+        },
+        "override": {
+          "type": ["object", "null"],
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "reason": {
+              "type": "string"
+            }
+          },
+          "required": ["value", "reason"],
+          "additionalProperties": false
+        },
+        "par2": {
+          "type": ["object", "null"],
+          "properties": {
+            "implementation": {
+              "type": "string"
+            },
+            "version": {
+              "type": ["string", "null"]
+            },
+            "command": {
+              "type": "string"
+            }
+          },
+          "required": ["implementation", "version", "command"],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "enabled",
+        "percent",
+        "default_enabled",
+        "default_reason",
+        "override",
+        "par2"
+      ],
+      "additionalProperties": false,
+      "x-coa-class": "recorded",
+      "description": "PAR2 redundancy"
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "cause": {
+            "type": "string"
+          },
+          "tool": {
+            "type": "string"
+          },
+          "drive": {
+            "type": "string"
+          }
+        },
+        "required": ["description", "cause", "tool", "drive"],
+        "additionalProperties": false
+      },
+      "x-coa-class": "recorded",
+      "description": "what acquisition could not capture"
+    },
+    "accepted_issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "accepted_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["code", "title", "accepted_at", "reason"],
+        "additionalProperties": false
+      },
+      "x-coa-class": "recorded",
+      "description": "issues accepted by the owner"
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": ["blocking", "warning", "info"]
+          },
+          "title": {
+            "type": "string"
+          },
+          "what": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "acceptable": {
+            "type": "boolean"
+          },
+          "values": {
+            "type": "object"
+          },
+          "accepted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "severity",
+          "title",
+          "what",
+          "why",
+          "actions",
+          "acceptable",
+          "values",
+          "accepted"
+        ],
+        "additionalProperties": false
+      },
+      "x-coa-class": "re-derivable",
+      "description": "issues found by the analysis, with acceptance state"
+    },
+    "log_messages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "record": {
+            "type": "string"
+          },
+          "line": {
+            "type": "string"
+          },
+          "class": {
+            "enum": ["blocking", "warning", "info"]
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": ["record", "line", "class", "code"],
+        "additionalProperties": false
+      },
+      "x-coa-class": "re-derivable",
+      "description": "every classified redumper line"
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "origin": {
+            "enum": ["acquisition", "derived"]
+          },
+          "status": {
+            "enum": ["pass", "fail", "warn", "skip"]
+          },
+          "values": {
+            "type": "object"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "origin", "status", "values", "note"],
+        "additionalProperties": false
+      },
+      "x-coa-class": "re-derivable",
+      "description": "consistency checks: derived checks are recomputed; acquisition-origin entries are carried forward unchanged"
+    },
+    "external_verification": {
+      "type": "object",
+      "properties": {
+        "redump": {
+          "type": "object",
+          "properties": {
+            "result": {
+              "enum": [
+                "not checked",
+                "no entry",
+                "ambiguous",
+                "agrees",
+                "contradicts"
+              ]
+            }
+          },
+          "required": ["result"]
+        },
+        "accuraterip": {
+          "type": "object",
+          "properties": {
+            "result": {
+              "enum": [
+                "not checked",
+                "no entry",
+                "ambiguous",
+                "agrees",
+                "contradicts"
+              ]
+            }
+          },
+          "required": ["result"]
+        },
+        "ctdb": {
+          "type": "object",
+          "properties": {
+            "result": {
+              "enum": [
+                "not checked",
+                "no entry",
+                "ambiguous",
+                "agrees",
+                "contradicts"
+              ]
+            }
+          },
+          "required": ["result"]
+        }
+      },
+      "required": ["redump", "accuraterip", "ctdb"],
+      "additionalProperties": false,
+      "x-coa-class": "recorded",
+      "description": "external verification results (Redump, AccurateRip, CTDB)"
+    },
+    "revisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "revised_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+          },
+          "operation": {
+            "enum": ["reprocess", "repair"]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "tool_version": {
+            "type": "string"
+          },
+          "format_version": {
+            "type": "string"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "previous": {}
+              },
+              "required": ["field", "previous"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "revised_at",
+          "operation",
+          "reason",
+          "tool_version",
+          "format_version",
+          "changes"
+        ],
+        "additionalProperties": false
+      },
+      "x-coa-class": "recorded",
+      "description": "reseals"
+    }
+  }
+}

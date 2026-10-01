@@ -1,0 +1,312 @@
+=== 2026-09-30 07:51:59 ========================================================
+redumper (build: b753+d8fix)
+
+arguments: disc --drive=disk6 --image-name=REISE --retries=20 --refine-subchannel
+
+drive information
+  path: disk6
+  inquiry: PLEXTOR - CD-R PX-W5224A (revision level: 1.04, vendor specific: 04/10/06 17:00)
+  configuration: PLEXTOR (read offset: +30, C2 shift: 294, pre-gap start: -75, read method: D8, sector order: DATA_C2_SUB)
+  profile: CD-ROM
+  read speed: <optimal>
+
+image path: .
+image name: REISE
+
+*** DUMP (time check: 0s)
+
+disc TOC:
+  track 01 { audio }
+    index 01 { LBA:   2701, MSF: 00:38:01 }
+  track 02 { audio }
+    index 01 { LBA:  21538, MSF: 04:49:13 }
+  track 03 { audio }
+    index 01 { LBA:  41968, MSF: 09:21:43 }
+  track 04 { audio }
+    index 01 { LBA:  67355, MSF: 15:00:05 }
+  track 05 { audio }
+    index 01 { LBA:  84075, MSF: 18:43:00 }
+  track 06 { audio }
+    index 01 { LBA: 103959, MSF: 23:08:09 }
+  track 07 { audio }
+    index 01 { LBA: 120966, MSF: 26:54:66 }
+  track 08 { audio }
+    index 01 { LBA: 140189, MSF: 31:11:14 }
+  track 09 { audio }
+    index 01 { LBA: 158180, MSF: 35:11:05 }
+  track 10 { audio }
+    index 01 { LBA: 175902, MSF: 39:07:27 }
+  track 11 { audio }
+    index 01 { LBA: 196319, MSF: 43:39:44 }
+  track AA { audio }
+    index 01 { LBA: 218136, MSF: 48:30:36 }
+
+media errors: 
+  SCSI: 0 samples
+  C2: 0 samples
+  Q: 1044
+
+*** DUMP::EXTRA (time check: 206s)
+
+PLEXTOR: reading lead-in (retry: 1)
+PLEXTOR: lead-in found (LBA: [-150 .. 15], sectors: 2516)
+PLEXTOR: reading lead-in (retry: 2)
+PLEXTOR: lead-in found (LBA: [-150 .. 15], sectors: 3000)
+PLEXTOR: storing lead-in (LBA: [-150 .. 15], verified: yes)
+
+*** PROTECTION (time check: 20s)
+
+protection: none
+
+*** REFINE (time check: 0s)
+
+correction statistics: 
+  SCSI: 0 samples
+  C2: 0 samples
+  Q: 251 sectors
+
+*** DVDKEY (time check: 467s)
+
+
+*** SPLIT (time check: 0s)
+
+
+correcting P... done
+correcting Q... done
+
+final TOC:
+  track 01 { audio }
+    index 00 { LBA: [  -150 ..   2700], length:   2851, MSF: 00:00:00-00:38:00 }
+    index 01 { LBA: [  2701 ..  21537], length:  18837, MSF: 00:38:01-04:49:12 }
+  track 02 { audio }
+    index 01 { LBA: [ 21538 ..  41967], length:  20430, MSF: 04:49:13-09:21:42 }
+  track 03 { audio }
+    index 01 { LBA: [ 41968 ..  67354], length:  25387, MSF: 09:21:43-15:00:04 }
+  track 04 { audio }
+    index 01 { LBA: [ 67355 ..  84074], length:  16720, MSF: 15:00:05-18:42:74 }
+  track 05 { audio }
+    index 01 { LBA: [ 84075 .. 103838], length:  19764, MSF: 18:43:00-23:06:38 }
+  track 06 { audio }
+    index 00 { LBA: [103839 .. 103958], length:    120, MSF: 23:06:39-23:08:08 }
+    index 01 { LBA: [103959 .. 120965], length:  17007, MSF: 23:08:09-26:54:65 }
+  track 07 { audio }
+    index 01 { LBA: [120966 .. 140188], length:  19223, MSF: 26:54:66-31:11:13 }
+  track 08 { audio }
+    index 01 { LBA: [140189 .. 158179], length:  17991, MSF: 31:11:14-35:11:04 }
+  track 09 { audio }
+    index 01 { LBA: [158180 .. 175609], length:  17430, MSF: 35:11:05-39:03:34 }
+  track 10 { audio }
+    index 00 { LBA: [175610 .. 175901], length:    292, MSF: 39:03:35-39:07:26 }
+    index 01 { LBA: [175902 .. 196239], length:  20338, MSF: 39:07:27-43:38:39 }
+  track 11 { audio }
+    index 00 { LBA: [196240 .. 196318], length:     79, MSF: 43:38:40-43:39:43 }
+    index 01 { LBA: [196319 .. 218135], length:  21817, MSF: 43:39:44-48:30:35 }
+  track AA { audio }
+    index 01 { LBA: [218136 .. 218234], length:     99, MSF: 48:30:36-48:31:59 }
+
+analyzing... done (time: 11s)
+
+non-zero  TOC sample range: [   -88200 .. +128263968]
+non-zero data sample range: [   +88343 .. +128236774]
+Universal Hash (SHA-1): 26b0a4fb28ed7990dd07a5d5677d69edae4ebee9
+
+fallback offset 0 applied
+disc write offset: +0
+
+checking tracks
+done
+
+writing tracks
+done
+
+CUE [REISE.cue]:
+CATALOG 0602498681503
+FILE "REISE (Track 01).bin" BINARY
+  TRACK 01 AUDIO
+    ISRC DEN120405586
+    INDEX 00 00:00:00
+    INDEX 01 00:36:01
+FILE "REISE (Track 02).bin" BINARY
+  TRACK 02 AUDIO
+    ISRC DEN120405655
+    INDEX 01 00:00:00
+FILE "REISE (Track 03).bin" BINARY
+  TRACK 03 AUDIO
+    ISRC DEN120405581
+    INDEX 01 00:00:00
+FILE "REISE (Track 04).bin" BINARY
+  TRACK 04 AUDIO
+    ISRC DEN120405582
+    INDEX 01 00:00:00
+FILE "REISE (Track 05).bin" BINARY
+  TRACK 05 AUDIO
+    ISRC DEN120405583
+    INDEX 01 00:00:00
+FILE "REISE (Track 06).bin" BINARY
+  TRACK 06 AUDIO
+    ISRC DEN120404987
+    INDEX 00 00:00:00
+    INDEX 01 00:01:45
+FILE "REISE (Track 07).bin" BINARY
+  TRACK 07 AUDIO
+    ISRC DEN120405584
+    INDEX 01 00:00:00
+FILE "REISE (Track 08).bin" BINARY
+  TRACK 08 AUDIO
+    ISRC DEN120405588
+    INDEX 01 00:00:00
+FILE "REISE (Track 09).bin" BINARY
+  TRACK 09 AUDIO
+    ISRC DEN120405587
+    INDEX 01 00:00:00
+FILE "REISE (Track 10).bin" BINARY
+  TRACK 10 AUDIO
+    ISRC DEN120405585
+    INDEX 00 00:00:00
+    INDEX 01 00:03:67
+FILE "REISE (Track 11).bin" BINARY
+  TRACK 11 AUDIO
+    ISRC DEN120405580
+    INDEX 00 00:00:00
+    INDEX 01 00:01:04
+
+
+*** HASH (time check: 21s)
+
+dat:
+<rom name="REISE (Track 01).bin" size="50657376" crc="5e509365" md5="777143e8812845461bed406bdcc052cd" sha1="e9baebe98c60bdcd3d10807590e0bcd031b781a5" />
+<rom name="REISE (Track 02).bin" size="48051360" crc="759189e5" md5="0495bd16108f313d0c51c429e3b76995" sha1="066340be499e025e7eccad3d6e30cf2adff68cbf" />
+<rom name="REISE (Track 03).bin" size="59710224" crc="42f281d7" md5="def8437e85f67c4532c04e30188ec14e" sha1="2606a1111225593104c725a365dc4daf6290c92f" />
+<rom name="REISE (Track 04).bin" size="39325440" crc="7241591c" md5="d01e45f7dfefe2a7aaa4967660a3379b" sha1="ebe13c420b4288c398a99ccb38b64a7ed919ccbe" />
+<rom name="REISE (Track 05).bin" size="46484928" crc="cd6cb6dd" md5="8148d2fd9b32f62f7b941eb3bd29ab83" sha1="5a983e275ab05822c3084cc0063ff1835b261a75" />
+<rom name="REISE (Track 06).bin" size="40282704" crc="44d44334" md5="a4e78e7c7be53331a16b0ad6d479c8fc" sha1="bdf2ca7b0044b934adf09e4ce1c50215156725c5" />
+<rom name="REISE (Track 07).bin" size="45212496" crc="e6a5078f" md5="0ac82d816224f0f67ca39e6c96c054dc" sha1="c2830d979d48aa04d4e26a6f799e4f7e69b2ae1e" />
+<rom name="REISE (Track 08).bin" size="42314832" crc="b739c79d" md5="09844dfac9cea3bb4838411a270ae6d9" sha1="70fd061bf80f1271a7dd80932f79555fe851a7ac" />
+<rom name="REISE (Track 09).bin" size="40995360" crc="cedecb4d" md5="bca16a5c68ac7b4cc6e523cbbbe039b3" sha1="a87a1bdfdcfebecfc6d66c8824d389c043fb35cb" />
+<rom name="REISE (Track 10).bin" size="48521760" crc="597dbcb1" md5="43db73b63020d98445d8222a25f755b2" sha1="45e7cb56acef33cd9351d23f442e532ddb70a231" />
+<rom name="REISE (Track 11).bin" size="51499392" crc="53e0ae44" md5="95764db4194c96d35b6ec6fff962b17f" sha1="d86fbf367f493a3210151a6d90292ca289b50c7c" />
+
+*** INFO (time check: 0s)
+
+
+*** END (time check: 0s)
+
+=== 2026-09-30 14:22:24 ========================================================
+redumper (build: b753+d8fix)
+
+arguments: refine --drive=disk6 --image-name=REISE --retries=10 --refine-subchannel
+
+drive information
+  path: disk6
+  inquiry: PLEXTOR - CD-R PX-W5224A (revision level: 1.04, vendor specific: 04/10/06 17:00)
+  configuration: PLEXTOR (read offset: +30, C2 shift: 294, pre-gap start: -75, read method: D8, sector order: DATA_C2_SUB)
+  profile: CD-ROM
+  read speed: <optimal>
+
+image path: .
+image name: REISE
+
+*** REFINE (time check: 0s)
+
+correction statistics: 
+  SCSI: 0 samples
+  C2: 0 samples
+  Q: 24 sectors
+
+*** END (time check: 230s)
+
+=== 2026-09-30 14:26:17 ========================================================
+redumper (build: b753+d8fix)
+
+arguments: refine --drive=disk6 --image-name=REISE --retries=10 --refine-subchannel
+
+drive information
+  path: disk6
+  inquiry: PLEXTOR - CD-R PX-W5224A (revision level: 1.04, vendor specific: 04/10/06 17:00)
+  configuration: PLEXTOR (read offset: +30, C2 shift: 294, pre-gap start: -75, read method: D8, sector order: DATA_C2_SUB)
+  profile: CD-ROM
+  read speed: <optimal>
+
+image path: .
+image name: REISE
+
+*** REFINE (time check: 0s)
+
+correction statistics: 
+  SCSI: 0 samples
+  C2: 0 samples
+  Q: 14 sectors
+
+*** END (time check: 221s)
+
+=== 2026-09-30 14:30:02 ========================================================
+redumper (build: b753+d8fix)
+
+arguments: refine --drive=disk6 --image-name=REISE --retries=10 --refine-subchannel
+
+drive information
+  path: disk6
+  inquiry: PLEXTOR - CD-R PX-W5224A (revision level: 1.04, vendor specific: 04/10/06 17:00)
+  configuration: PLEXTOR (read offset: +30, C2 shift: 294, pre-gap start: -75, read method: D8, sector order: DATA_C2_SUB)
+  profile: CD-ROM
+  read speed: <optimal>
+
+image path: .
+image name: REISE
+
+*** REFINE (time check: 0s)
+
+correction statistics: 
+  SCSI: 0 samples
+  C2: 0 samples
+  Q: 12 sectors
+
+*** END (time check: 221s)
+
+=== 2026-09-30 14:33:47 ========================================================
+redumper (build: b753+d8fix)
+
+arguments: refine --drive=disk6 --image-name=REISE --retries=10 --refine-subchannel
+
+drive information
+  path: disk6
+  inquiry: PLEXTOR - CD-R PX-W5224A (revision level: 1.04, vendor specific: 04/10/06 17:00)
+  configuration: PLEXTOR (read offset: +30, C2 shift: 294, pre-gap start: -75, read method: D8, sector order: DATA_C2_SUB)
+  profile: CD-ROM
+  read speed: <optimal>
+
+image path: .
+image name: REISE
+
+*** REFINE (time check: 0s)
+
+correction statistics: 
+  SCSI: 0 samples
+  C2: 0 samples
+  Q: 7 sectors
+
+*** END (time check: 215s)
+
+=== 2026-09-30 14:37:26 ========================================================
+redumper (build: b753+d8fix)
+
+arguments: refine --drive=disk6 --image-name=REISE --retries=10 --refine-subchannel
+
+drive information
+  path: disk6
+  inquiry: PLEXTOR - CD-R PX-W5224A (revision level: 1.04, vendor specific: 04/10/06 17:00)
+  configuration: PLEXTOR (read offset: +30, C2 shift: 294, pre-gap start: -75, read method: D8, sector order: DATA_C2_SUB)
+  profile: CD-ROM
+  read speed: <optimal>
+
+image path: .
+image name: REISE
+
+*** REFINE (time check: 0s)
+
+correction statistics: 
+  SCSI: 0 samples
+  C2: 0 samples
+  Q: 4 sectors
+
+*** END (time check: 216s)

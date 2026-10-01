@@ -1,0 +1,33 @@
+name = "cd-provisional"
+version = "0.1"
+status = "provisional-only"
+family = "CD"
+description = "Any other CD: provisional capture with recorded gaps; never approvable"
+
+[match]
+prefixes = ["CD", "SACD", "CDV", "DD"]
+
+[[stages]]
+command = "dump"
+
+[[stages]]
+command = "dump::extra"
+
+[[stages]]
+command = "protection"
+
+[[stages]]
+command = "refine"
+label = "c2"
+options = ["--retries=100"]
+
+[[stages]]
+command = "refine"
+label = "q"
+options = ["--retries=30", "--refine-subchannel"]
+
+[[stages]]
+command = "refine"
+label = "slow"
+options = ["--retries=100", "--speed=8"]
+when = "c2_or_scsi_remaining"

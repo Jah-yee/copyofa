@@ -1,0 +1,30 @@
+# coa configuration (recorded in every medium's metadata).
+archive_root = $archive_root
+work_root = $work_root
+
+[redumper]
+path = "redumper"                      # resolved with PATH lookup
+allowed_builds = ["b753+d8fix"]        # only audited redumper builds
+
+[[drives]]
+name = "plextor"
+vendor = "PLEXTOR"
+product = "CD-R   PX-W5224A"           # exact SCSI Product Identification (drutil -drive argument)
+firmware = "1.04"
+media = ["CD"]                         # families this drive is verified for
+
+[[known_bad]]                          # drive bridge / redumper build combinations that corrupt reads
+bridge = "0x152D:0x2338"
+builds = ["b751", "b752", "b753"]
+reason = "JMicron bridge pads READ CDDA transfers: HOST: SHORT TRANSFER on PLEXTOR lead-in reads without +d8fix"
+
+[profiles]
+approved = []                          # e.g. ["cd-audio-pressed@0.1"] once the owner approves it
+
+[redundancy]
+percent = 10                           # PAR2 redundancy percentage
+q_rate_threshold = 0.005               # first-pass program-area bad-Q rate that turns redundancy on by default
+
+[space]
+min_free_work_bytes = 3000000000
+min_free_archive_bytes = 1500000000

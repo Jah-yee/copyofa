@@ -1,0 +1,133 @@
+# Classification of redumper b753 console/log lines.
+# pattern: Python regex; matched with re.fullmatch on a cleaned line unless match = "contains" (re.search).
+# class: blocking | warning | info. acceptable: whether `coa accept` may accept a blocking entry.
+# A user catalog (<config dir>/messages.toml, same format) is consulted first; the first match wins.
+# Any `warning:`/`error:` line matching no entry is blocking until classified.
+
+# --- drive unsuitable: blocking, not acceptable; acquisition stops right after the stage ---
+
+[[message]]
+pattern = 'warning: drive not found in the database'
+class = "blocking"
+code = "drive-not-in-database"
+acceptable = false
+why = "redumper has no read offset, C2 shift or lead-in support data for this drive"
+
+[[message]]
+pattern = 'warning: unsupported drive firmware'
+class = "blocking"
+code = "unsupported-firmware"
+acceptable = false
+why = "redumper does not support this drive firmware"
+
+[[message]]
+pattern = 'warning: drive read offset not found in the database'
+class = "blocking"
+code = "drive-offset-unknown"
+acceptable = false
+why = "without the drive read offset the sample positions in .scram are wrong"
+
+[[message]]
+pattern = 'warning: using generic drive'
+class = "blocking"
+code = "generic-drive"
+acceptable = false
+why = "redumper falls back to generic drive settings"
+
+[[message]]
+pattern = "warning: drive doesn't support reading of subchannel data"
+class = "blocking"
+code = "no-subchannel"
+acceptable = false
+why = "the subchannel (Q, MCN, ISRC, R-W) cannot be captured"
+
+[[message]]
+pattern = "warning: drive doesn't support C2 error pointers"
+class = "blocking"
+code = "no-c2"
+acceptable = false
+why = "read errors cannot be detected without C2 pointers"
+
+[[message]]
+pattern = 'SHORT TRANSFER'
+match = "contains"
+class = "blocking"
+code = "scsi-short-transfer"
+acceptable = false
+why = "HOST: SHORT TRANSFER means the bridge truncated a transfer (known on JMicron 0x152D:0x2338 without +d8fix)"
+
+# --- blocking, acceptable after an explicit decision ---
+
+[[message]]
+pattern = 'warning: TOC / QTOC mismatch, .*'
+class = "blocking"
+code = "toc-qtoc-mismatch"
+acceptable = true
+why = "the TOC and the Q subchannel disagree about the disc layout"
+
+[[message]]
+pattern = 'warning: split is performed by QTOC'
+class = "blocking"
+code = "toc-qtoc-mismatch"
+acceptable = true
+why = "the TOC and the Q subchannel disagree about the disc layout"
+
+[[message]]
+pattern = 'warning: offset shift detected, to apply correction please use an option'
+class = "blocking"
+code = "offset-shift"
+acceptable = true
+why = "more than one write offset on one disc"
+
+[[message]]
+pattern = 'error: data errors detected, unable to continue'
+class = "blocking"
+code = "split-refused"
+acceptable = true
+why = "split refused because of read errors; no canonical track hashes without --force-split"
+
+[[message]]
+pattern = 'warning: removed postscribed ID \(track: .*\)'
+class = "blocking"
+code = "data-modified"
+acceptable = true
+why = "split modified track data"
+
+[[message]]
+pattern = 'warning: descramble failed \(LBA: .*\)'
+class = "blocking"
+code = "descramble-failed"
+acceptable = true
+why = "data sectors could not be descrambled"
+
+[[message]]
+pattern = 'warning: incomplete pre-gap \(session: 1, unavailable: \d+/\d+\)'
+class = "blocking"
+code = "incomplete-pregap"
+acceptable = true
+why = "part of session 1's pre-gap was not read"
+
+# --- warnings ---
+
+[[message]]
+pattern = 'warning: CD-R (lead-in/lead-out|leading|trailing) C2 errors detected.*'
+class = "warning"
+code = "cdr-c2-tolerated"
+acceptable = true
+why = "C2 errors within redumper's CD-R tolerance"
+
+# --- information ---
+
+[[message]]
+pattern = 'warning: non-zero data range is not continuous, skipping Universal Hash calculation'
+class = "info"
+code = "universal-hash-skipped"
+acceptable = true
+why = "only a signal; unread samples are judged by the error-count checks"
+
+[[message]]
+pattern = 'warning: incomplete pre-gap \(session: ([2-9]|\d{2,}), unavailable: \d+/\d+\)'
+class = "info"
+code = "intersession-pregap"
+acceptable = true
+why = "expected on multi-session discs (inter-session gap)"

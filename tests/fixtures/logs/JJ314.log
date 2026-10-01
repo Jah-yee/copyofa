@@ -1,0 +1,140 @@
+=== 2026-09-29 15:16:17 ========================================================
+redumper (build: b753+d8fix)
+
+arguments: disc --drive=disk6 --image-name=JJ314 --retries=100 --refine-subchannel
+
+drive information
+  path: disk6
+  inquiry: PLEXTOR - CD-R PX-W5224A (revision level: 1.04, vendor specific: 04/10/06 17:00)
+  configuration: PLEXTOR (read offset: +30, C2 shift: 294, pre-gap start: -75, read method: D8, sector order: DATA_C2_SUB)
+  profile: CD-ROM
+  read speed: <optimal>
+
+image path: .
+image name: JJ314
+
+*** DUMP (time check: 0s)
+
+disc TOC:
+  track 01 { audio }
+    index 01 { LBA:      0, MSF: 00:02:00 }
+  track 02 { audio }
+    index 01 { LBA:  29937, MSF: 06:41:12 }
+  track 03 { audio }
+    index 01 { LBA:  48020, MSF: 10:42:20 }
+  track 04 { audio }
+    index 01 { LBA:  70252, MSF: 15:38:52 }
+  track 05 { audio }
+    index 01 { LBA:  92307, MSF: 20:32:57 }
+  track 06 { audio }
+    index 01 { LBA: 108927, MSF: 24:14:27 }
+  track 07 { audio }
+    index 01 { LBA: 127620, MSF: 28:23:45 }
+  track 08 { audio }
+    index 01 { LBA: 153540, MSF: 34:09:15 }
+  track 09 { audio }
+    index 01 { LBA: 171480, MSF: 38:08:30 }
+  track 10 { audio }
+    index 01 { LBA: 189095, MSF: 42:03:20 }
+  track 11 { audio }
+    index 01 { LBA: 215195, MSF: 47:51:20 }
+  track 12 { audio }
+    index 01 { LBA: 228652, MSF: 50:50:52 }
+  track 13 { audio }
+    index 01 { LBA: 245295, MSF: 54:32:45 }
+  track 14 { audio }
+    index 01 { LBA: 262697, MSF: 58:24:47 }
+  track AA { audio }
+    index 01 { LBA: 287827, MSF: 63:59:52 }
+
+media errors: 
+  SCSI: 0 samples
+  C2: 26293 samples
+  Q: 3801
+
+*** DUMP::EXTRA (time check: 279s)
+
+PLEXTOR: reading lead-in (retry: 1)
+PLEXTOR: lead-in found (LBA: [-150 .. 15], sectors: 3417)
+PLEXTOR: reading lead-in (retry: 2)
+PLEXTOR: lead-in found (LBA: [-150 .. 15], sectors: 3899)
+PLEXTOR: storing lead-in (LBA: [-150 .. 15], verified: yes)
+
+*** PROTECTION (time check: 26s)
+
+protection: none
+
+*** REFINE (time check: 0s)
+
+correction statistics: 
+  SCSI: 0 samples
+  C2: 24216 samples
+  Q: 2341 sectors
+
+*** DVDKEY (time check: 6374s)
+
+
+*** SPLIT (time check: 0s)
+
+
+correcting P... done
+correcting Q... done
+
+final TOC:
+  track 01 { audio }
+    index 00 { LBA: [  -150 ..     -1], length:    150, MSF: 00:00:00-00:01:74 }
+    index 01 { LBA: [     0 ..  29894], length:  29895, MSF: 00:02:00-06:40:44 }
+  track 02 { audio }
+    index 00 { LBA: [ 29895 ..  29936], length:     42, MSF: 06:40:45-06:41:11 }
+    index 01 { LBA: [ 29937 ..  47909], length:  17973, MSF: 06:41:12-10:40:59 }
+  track 03 { audio }
+    index 00 { LBA: [ 47910 ..  48019], length:    110, MSF: 10:40:60-10:42:19 }
+    index 01 { LBA: [ 48020 ..  70191], length:  22172, MSF: 10:42:20-15:37:66 }
+  track 04 { audio }
+    index 00 { LBA: [ 70192 ..  70251], length:     60, MSF: 15:37:67-15:38:51 }
+    index 01 { LBA: [ 70252 ..  92266], length:  22015, MSF: 15:38:52-20:32:16 }
+  track 05 { audio }
+    index 00 { LBA: [ 92267 ..  92306], length:     40, MSF: 20:32:17-20:32:56 }
+    index 01 { LBA: [ 92307 .. 108926], length:  16620, MSF: 20:32:57-24:14:26 }
+  track 06 { audio }
+    index 01 { LBA: [108927 .. 127606], length:  18680, MSF: 24:14:27-28:23:31 }
+  track 07 { audio }
+    index 00 { LBA: [127607 .. 127619], length:     13, MSF: 28:23:32-28:23:44 }
+    index 01 { LBA: [127620 .. 153526], length:  25907, MSF: 28:23:45-34:09:01 }
+  track 08 { audio }
+    index 00 { LBA: [153527 .. 153539], length:     13, MSF: 34:09:02-34:09:14 }
+    index 01 { LBA: [153540 .. 171456], length:  17917, MSF: 34:09:15-38:08:06 }
+  track 09 { audio }
+    index 00 { LBA: [171457 .. 171479], length:     23, MSF: 38:08:07-38:08:29 }
+    index 01 { LBA: [171480 .. 189056], length:  17577, MSF: 38:08:30-42:02:56 }
+  track 10 { audio }
+    index 00 { LBA: [189057 .. 189094], length:     38, MSF: 42:02:57-42:03:19 }
+    index 01 { LBA: [189095 .. 215109], length:  26015, MSF: 42:03:20-47:50:09 }
+  track 11 { audio }
+    index 00 { LBA: [215110 .. 215194], length:     85, MSF: 47:50:10-47:51:19 }
+    index 01 { LBA: [215195 .. 228549], length:  13355, MSF: 47:51:20-50:49:24 }
+  track 12 { audio }
+    index 00 { LBA: [228550 .. 228651], length:    102, MSF: 50:49:25-50:50:51 }
+    index 01 { LBA: [228652 .. 245294], length:  16643, MSF: 50:50:52-54:32:44 }
+  track 13 { audio }
+    index 01 { LBA: [245295 .. 262619], length:  17325, MSF: 54:32:45-58:23:44 }
+  track 14 { audio }
+    index 00 { LBA: [262620 .. 262696], length:     77, MSF: 58:23:45-58:24:46 }
+    index 01 { LBA: [262697 .. 287826], length:  25130, MSF: 58:24:47-63:59:51 }
+  track AA { audio }
+    index 01 { LBA: [287827 .. 287925], length:     99, MSF: 63:59:52-64:01:00 }
+
+analyzing... done (time: 15s)
+
+non-zero  TOC sample range: [   -88200 .. +169242276]
+non-zero data sample range: [     -296 .. +169241684]
+warning: non-zero data range is not continuous, skipping Universal Hash calculation
+
+Perfect Audio Offset (silence level: 17): [-5275 .. +4107]
+moving data out of lead-in (difference: -296)
+disc write offset: -296
+
+checking tracks
+errors detected, track: 13, sectors: {SKIP: 0, C2: 66}, samples: {SKIP: 0, C2: 869}
+errors detected, track: 14, sectors: {SKIP: 0, C2: 112}, samples: {SKIP: 0, C2: 1208}
+error: data errors detected, unable to continue

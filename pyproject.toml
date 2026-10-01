@@ -1,0 +1,29 @@
+[project]
+name = "copyofa"
+version = "0.1.0"
+description = "Archive optical discs bit-exactly with redumper"
+readme = "README.md"
+authors = [{ name = "Jean-Marc Fontaine", email = "jm@jmfontaine.net" }]
+requires-python = ">=3.14"
+dependencies = [
+    "jsonschema>=4.26.0",
+    "pyobjc-framework-cocoa>=12.2.2",
+    "pyobjc-framework-diskarbitration>=12.2.2",
+]
+
+[project.scripts]
+coa = "copyofa.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = ["pytest>=9.1.1"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "pilot: reads pilot dumps from $COA_PILOT_DUMPS (default ~/Dumps); skipped when absent",
+    "macos_integration: attaches a temporary disk image",
+]

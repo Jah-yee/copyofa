@@ -1,0 +1,66 @@
+# Shared medium-ID prefix vocabulary. Read by coa and the other archiving tools.
+# handled_by: "coa" (dumped by this tool) or "other" (listed in media lists, never dumped).
+# sides: "none", "optional" or "required" (side letters A/B for two-sided media).
+version = 1
+
+[prefixes.CD]
+media = ["CD"]
+handled_by = "coa"
+partial = false
+sides = "none"
+
+[prefixes.SACD]
+media = ["CD"]
+handled_by = "coa"
+partial = true
+sides = "none"
+partial_reason = "high-resolution DSD layer is not readable by CD/DVD/BD drives"
+
+[prefixes.CDV]
+media = ["CD"]
+handled_by = "coa"
+partial = true
+sides = "none"
+partial_reason = "analog LaserDisc video is not readable by optical data drives"
+
+[prefixes.DVD]
+media = ["DVD"]
+handled_by = "coa"
+partial = false
+sides = "optional"
+
+[prefixes.BD]
+media = ["BD"]
+handled_by = "coa"
+partial = false
+sides = "none"
+
+[prefixes.DD]
+media = ["CD", "DVD"]
+handled_by = "coa"
+partial = false
+sides = "required"
+
+[prefixes.VINYL]
+media = []
+handled_by = "other"
+partial = false
+sides = "optional"
+
+[prefixes.CASS]
+media = []
+handled_by = "other"
+partial = false
+sides = "optional"
+
+[prefixes.MD]
+media = []
+handled_by = "other"
+partial = false
+sides = "none"
+
+[prefixes.VHS]
+media = []
+handled_by = "other"
+partial = false
+sides = "none"
