@@ -1,15 +1,17 @@
 """Verification run: split/hash/info through links to the read-only raw files."""
 
 import shutil
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
 
 from ..redumper import console
 from ..redumper.commands import build_argv
 from ..system.procs import run_recorded
-from .acquire import Run
 from .workstate import next_nn, save_state, snapshot
+
+if TYPE_CHECKING:
+    from .acquire import Run
 
 REFUSAL = "error: data errors detected, unable to continue"
 

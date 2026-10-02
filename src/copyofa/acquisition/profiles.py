@@ -34,8 +34,8 @@ class Profile:
     status: str
     family: str
     description: str
-    strict_q: bool  # bad Q at track/index changes and uncertain MCN/ISRC need an
-    # explicit acceptance
+    # Bad Q at track/index changes and uncertain MCN/ISRC need an explicit acceptance.
+    strict_q: bool
     match: dict[str, Any]
     stages: tuple[Stage, ...]
 

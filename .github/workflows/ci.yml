@@ -46,7 +46,8 @@ jobs:
       - uses: astral-sh/setup-uv@v7
       # The archive tests compress, protect and rebuild a real archive set.
       - run: brew install flac jq par2 xz zstd
+      # pytest comes from the dev group, which uv run installs by default.
       - run: >-
           uv run --isolated --python 3.14
-          --resolution ${{ matrix.resolution }} --with pytest
+          --resolution ${{ matrix.resolution }}
           python ${{ matrix.warnings }} -m pytest

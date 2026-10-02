@@ -72,8 +72,9 @@ def build_set(
         ]
         encoding.encode_all(jobs)
     else:
+        assert stored is not None  # the exactly-one check above
         for name in payload:
-            shutil.copyfile(stored[name], staging / name)  # type: ignore[index]
+            shutil.copyfile(stored[name], staging / name)
     (staging / f"{holon}-{medium}.json").write_text(
         dumps_json(metadata), encoding="utf-8"
     )

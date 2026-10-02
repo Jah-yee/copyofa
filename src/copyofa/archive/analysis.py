@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from ..errors import IntegrityFailure
 from ..issues import Issue
 from ..redumper import console, rawdata
 from ..redumper.messages import Catalog
@@ -111,6 +112,17 @@ def _stage(
     return candidates[0] if first else candidates[-1]
 
 
+def _reported(value: int | None, what: str) -> int:
+    """A drive value from the dump record's configuration line, which the raw-data
+    analysis cannot do without."""
+    if value is None:
+        raise IntegrityFailure(
+            f"the dump console record does not report the drive's {what}; "
+            "the raw files cannot be analyzed"
+        )
+    return value
+
+
 def track_check_ranges(toc: console.Toc) -> list[tuple[int, int, int, int]]:
     """(track number, session, first LBA, LBA after the last) as redumper's
     check_tracks uses them.
@@ -121,9 +133,18 @@ def track_check_ranges(toc: console.Toc) -> list[tuple[int, int, int, int]]:
         if track.number == "AA" or not track.indices:
             continue
         nxt = tracks[i + 1] if i + 1 < len(tracks) else None
-        end = (
-            nxt.indices[0].lba if nxt and nxt.indices else track.indices[-1].lba_to + 1  # type: ignore[operator]
-        )
+        if nxt and nxt.indices:
+            end = nxt.indices[0].lba
+        else:
+            # Only the final TOC records index ends; a disc TOC always closes with
+            # the lead-out entry, so a missing end means the record is truncated.
+            last_lba = track.indices[-1].lba_to
+            if last_lba is None:
+                raise IntegrityFailure(
+                    f"TOC track {track.number} has no end: the TOC in the console "
+                    "record is incomplete"
+                )
+            end = last_lba + 1
         ranges.append((int(track.number), track.session, track.indices[0].lba, end))
     return ranges
 
@@ -285,13 +306,13 @@ def derive(
         counts = rawdata.count_errors(
             state_path,
             subcode_path,
-            pregap_start,  # type: ignore[arg-type]
-            read_offset,  # type: ignore[arg-type]
+            _reported(pregap_start, "pre-gap start"),
+            _reported(read_offset, "read offset"),
             leadout_lba,
         )
         q = rawdata.q_analysis(
             subcode_path.read_bytes(),
-            pregap_start,  # type: ignore[arg-type]
+            _reported(pregap_start, "pre-gap start"),
             leadout_lba,
             [(n, a, b) for n, _, a, b in ranges],
         )
@@ -381,10 +402,8 @@ def derive(
                         "verified": bool(stored and stored[2]),
                         "attempts": leadin.attempts if (leadin and number == 1) else 0,
                     },
-                    "pregap_sectors": (
-                        first.index(0).length or 0  # type: ignore[union-attr]
-                    )
-                    if first and first.index(0)
+                    "pregap_sectors": (index0.length or 0)
+                    if first and (index0 := first.index(0))
                     else 0,
                     "leadout_lba": out_lba,
                     "leadout_sectors_read": (
@@ -402,7 +421,10 @@ def derive(
     if state_path and subcode_path and f"{image}.scram" in raw:
         sub_size, state_size = subcode_path.stat().st_size, state_path.stat().st_size
         scram_size = raw[f"{image}.scram"].stat().st_size
-        expected = sub_size // rawdata.SUBCODE * rawdata.SECTOR - read_offset * 4  # type: ignore[operator]
+        expected = (
+            sub_size // rawdata.SUBCODE * rawdata.SECTOR
+            - _reported(read_offset, "read offset") * 4
+        )
         ok = (
             sub_size % rawdata.SUBCODE == 0
             and scram_size == 4 * state_size
@@ -474,10 +496,7 @@ def derive(
         ok = (
             disc == final == drutil_tracks
             and disc_toc.leadout_lba == final_leadout
-            and (
-                len(toc.sessions) > 1  # type: ignore[union-attr]
-                or drutil_end == final_leadout
-            )
+            and (len(split.final_toc.sessions) > 1 or drutil_end == final_leadout)
         )
         checks.append(
             _check(
@@ -675,12 +694,13 @@ def derive(
                 {"record": item.record, "line": item.line},
             )
         )
-    if counts and counts.scsi_samples:
+    # counts exists only when state_path does; the check just tells mypy so.
+    if counts and counts.scsi_samples and state_path:
         runs = rawdata.error_runs(
-            state_path,  # type: ignore[arg-type]
+            state_path,
             rawdata.STATE_ERROR_SKIP,
-            pregap_start,  # type: ignore[arg-type]
-            read_offset,  # type: ignore[arg-type]
+            _reported(pregap_start, "pre-gap start"),
+            _reported(read_offset, "read offset"),
         )
         add(
             Issue(

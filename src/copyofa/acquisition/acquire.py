@@ -789,12 +789,13 @@ def run_stage(
                 "reason": "repeat interrupted dump",
             }
         )
+    assert run.location is not None  # archive and refine take the drive first
     argv = build_argv(
         run.redumper,
         command,
         image_path=paths.dump,
         image_name=run.image,
-        drive_bsd=run.location.bsd_name,  # type: ignore[union-attr]  # set earlier
+        drive_bsd=run.location.bsd_name,
         options=options,
     )
     record = paths.stage_record(nn, command)

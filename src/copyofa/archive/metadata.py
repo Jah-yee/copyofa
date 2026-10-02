@@ -87,7 +87,7 @@ def redundancy_doc(
             "implementation": "par2cmdline",
             "version": encoding.tool_versions()["par2"],
             "command": shlex.join(
-                par2_argv(holon, medium, payload, percent)  # type: ignore[arg-type]
+                par2_argv(holon, medium, payload, cfg.redundancy_percent)
             ),
         }
     return {

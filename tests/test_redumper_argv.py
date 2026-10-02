@@ -128,7 +128,8 @@ def test_run_recorded_keeps_bytes(tmp_path: Path) -> None:
         "import sys; sys.stdout.write('a\\r' + ' ' * 79 + '\\rb\\n'); "
         "sys.stderr.write('err\\n')"
     )
-    run = run_recorded([sys.executable, "-c", script], record, echo=False)
+    # -u: without it the piped stdout is block-buffered and stderr's line lands first.
+    run = run_recorded([sys.executable, "-u", "-c", script], record, echo=False)
     assert run.exit_code == 0
     assert not run.interrupted
     assert record.read_bytes().startswith(b"a\r" + b" " * 79 + b"\rb\n")

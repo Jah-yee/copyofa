@@ -116,6 +116,11 @@ def _int_attr(node: ET.Element | None, attr: str = "value") -> int | None:
         return None
 
 
+def _child_value(node: ET.Element | None, path: str) -> str | None:
+    child = node.find(path) if node is not None else None
+    return child.get("value") if child is not None else None
+
+
 def parse_drutil_status(xml_bytes: bytes, product: str | None) -> MediumStatus | None:
     """Parse `drutil -drive <product> status -xml` for the device whose product name
     equals `product` (the first device when product is None)."""
@@ -150,12 +155,8 @@ def parse_drutil_status(xml_bytes: bytes, product: str | None) -> MediumStatus |
         return MediumStatus(
             present=status.find("mediaIsPresent") is not None,
             in_transition=status.find("mediaIsInTransition") is not None,
-            media_class=info.find("mediaClass").get("value")  # type: ignore[union-attr]
-            if has("mediaClass")
-            else None,
-            media_type=info.find("mediaType").get("value")  # type: ignore[union-attr]
-            if has("mediaType")
-            else None,
+            media_class=_child_value(info, "mediaClass"),
+            media_type=_child_value(info, "mediaType"),
             blank=has("blank"),
             appendable=has("appendable"),
             erasable=has("erasable"),
@@ -392,7 +393,7 @@ class MountGuard:
             DiskArbitration.DARegisterDiskMountApprovalCallback
         )
 
-        @register_callback  # type: ignore[untyped-decorator]
+        @register_callback  # type: ignore[untyped-decorator]  # objc has no stubs
         def callback(disk: Any, context: Any) -> Any:
             return self._approve(disk, context)
 

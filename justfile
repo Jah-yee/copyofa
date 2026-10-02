@@ -57,9 +57,10 @@ setup:
     uv run pre-commit install  # Install pre-commit hooks
     echo "Run 'source .venv/bin/activate' to activate the Python virtual environment"
 
-# Run tests with coverage
+# Run tests with coverage; arguments go to pytest unchanged
+[positional-arguments]
 test *args:
-    uv run pytest --cov {{ args }}
+    uv run pytest --cov=copyofa "$@"
 
 # Run type checker
 type-check:

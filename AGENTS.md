@@ -30,8 +30,6 @@ a change, run `just qa` and `just test`; CI runs the same checks on macOS.
 - The archive tests need `flac`, `jq`, `par2`, `xz` and `zstd` on `PATH`.
 - Files under `tests/fixtures/` are the tools' own output (redumper logs, drutil
   status). Never edit them; the pre-commit fixers skip them.
-- Run the suite outside `~/Desktop`, `~/Documents` and `~/Downloads`: `coa`
-  refuses work roots there.
 
 ## Language
 
@@ -45,8 +43,10 @@ names such as `diskutil`.
 - Lint and format with ruff at a line length of 88. Suppress a finding only with
   `# noqa: CODE - reason`; repository-wide ignores live in `pyproject.toml`, each
   with its reason.
-- Strict mypy covers `src` and `tests`. `# type: ignore[code]` only at untyped
-  boundaries (PyObjC), with a reason.
+- Strict mypy covers `src` and `tests`. Narrow optional values instead of
+  silencing mypy: guard a value that can really be missing with a clear
+  `CoaError`, and `assert` an invariant the code already guarantees.
+  `# type: ignore[code]` only at untyped boundaries (PyObjC), with a reason.
 - Declare every third-party module the code imports as a direct dependency;
   `deptry` enforces it. Add dependencies with `uv add`, never by editing
   `pyproject.toml` by hand.

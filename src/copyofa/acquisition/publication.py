@@ -2,7 +2,7 @@
 
 import shutil
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
 
@@ -16,9 +16,11 @@ from ..errors import (
 )
 from ..issues import ACCEPTED, FAIL, PASS, Issue, open_blocking, outcome, render
 from ..util import parse_utc, utc_now
-from .acquire import Run
 from .verifyrun import run_verification
 from .workstate import make_tree_writable, save_state
+
+if TYPE_CHECKING:
+    from .acquire import Run
 
 
 def metadata_stages(state: dict[str, Any]) -> list[dict[str, Any]]:

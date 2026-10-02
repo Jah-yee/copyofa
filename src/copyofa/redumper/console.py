@@ -417,9 +417,12 @@ def parse_split(lines: list[str]) -> Split | None:
             r"samples: \{SKIP: (\d+), C2: (\d+)\}$",
             line,
         ):
-            track_errors[match.group(1)] = tuple(
-                int(match.group(i)) for i in range(2, 6)
-            )  # type: ignore[assignment]
+            track_errors[match.group(1)] = (
+                int(match.group(2)),
+                int(match.group(3)),
+                int(match.group(4)),
+                int(match.group(5)),
+            )
         elif line == "error: data errors detected, unable to continue":
             refused = True
         if line == "Perfect Audio Offset applied":
