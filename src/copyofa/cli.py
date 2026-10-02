@@ -204,28 +204,23 @@ def status_cmd(config_path: str | None, holon: str | None, medium: str | None) -
         rows = []
         if cfg.work_root.exists():
             for d in sorted(cfg.work_root.iterdir()):
-                if d.is_dir() and (d / "state.json").exists():
-                    work_holon, _, work_medium = d.name.partition("-")
-                    state = load_state(
-                        WorkPaths(cfg.work_root, work_holon, work_medium)
+                if not d.is_dir():
+                    continue
+                work_holon, _, work_medium = d.name.partition("-")
+                state = load_state(WorkPaths(cfg.work_root, work_holon, work_medium))
+                if state is None:  # not a work directory (no "-", no state.json)
+                    continue
+                issues = [
+                    Issue.from_dict(i)
+                    for i in state["issues"] + state["pre_dump_issues"]
+                ]
+                codes = (
+                    ", ".join(
+                        i.code for i in open_blocking(issues, state["acceptances"])
                     )
-                    issues = [
-                        Issue.from_dict(i)
-                        for i in state["issues"] + state["pre_dump_issues"]  # type: ignore[index]
-                    ]
-                    codes = (
-                        ", ".join(
-                            i.code
-                            for i in open_blocking(
-                                issues,
-                                state["acceptances"],  # type: ignore[index]
-                            )
-                        )
-                        or "-"
-                    )
-                    rows.append(
-                        f"{d.name}  {state['phase']}  open: {codes}"  # type: ignore[index]
-                    )
+                    or "-"
+                )
+                rows.append(f"{d.name}  {state['phase']}  open: {codes}")
         click.echo("\n".join(rows) if rows else "no work in progress")
         return 0
     from .archive.transaction import journals

@@ -484,6 +484,8 @@ def first_identification(
             "the drive reports no medium device (no BSD name)", code="no-medium"
         )
     selected.location = location
+    # The stages must use the device checked here, as the resume path does.
+    run.location = location
     issues: list[dict[str, Any]] = []
     mounts = macos.mounts_for(location.bsd_name)
     rw = [m for m in mounts if not m.read_only]
