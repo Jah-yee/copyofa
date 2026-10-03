@@ -1,8 +1,9 @@
 """Rebuild session records and recorded stage entries from a pilot dump made with
 `redumper disc`.
 
-The pilot dumps only have redumper's .log; each stage section becomes one console record
-prefixed with the log's header, which is what the stage-by-stage runs of coa produce.
+The pilot dumps only have redumper's .log; each stage section becomes one console
+record prefixed with the log's header, which is what the stage-by-stage runs of
+copyofa produce.
 """
 
 import re

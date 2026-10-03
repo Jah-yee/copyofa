@@ -117,7 +117,7 @@ def test_file_lock_is_exclusive(tmp_path: Path) -> None:
     path = tmp_path / "x.lock"
     with (
         macos.FileLock(path),
-        pytest.raises(EnvironmentFailure, match="held by another coa process"),
+        pytest.raises(EnvironmentFailure, match="held by another copyofa process"),
         macos.FileLock(path),
     ):
         pass

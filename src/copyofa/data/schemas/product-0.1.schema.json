@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://copyofa/product-0.1.schema.json",
-  "title": "coa product manifest 0.1",
+  "$id": "https://raw.githubusercontent.com/jmfontaine/copyofa/main/src/copyofa/data/schemas/product-0.1.schema.json",
+  "title": "CopyOfA product manifest 0.1",
   "type": "object",
   "additionalProperties": false,
   "required": [

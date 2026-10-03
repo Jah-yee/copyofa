@@ -5,7 +5,7 @@ repos:
     hooks:
       - id: check-added-large-files
       - id: check-merge-conflict
-      # config.template.toml is a string.Template; `coa init` fills in its
+      # config.template.toml is a string.Template; `copyofa init` fills in its
       # $placeholders, which are not valid TOML until then.
       - id: check-toml
         exclude: ^src/copyofa/data/config\.template\.toml$

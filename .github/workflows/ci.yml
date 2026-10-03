@@ -13,7 +13,7 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# Every job runs on macOS: coa drives macOS tools, and its PyObjC dependencies
+# Every job runs on macOS: copyofa drives macOS tools, and its PyObjC dependencies
 # have no wheels for other platforms.
 jobs:
   quality:

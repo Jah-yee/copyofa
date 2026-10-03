@@ -34,7 +34,9 @@ def schema(kind: str) -> dict[str, Any]:
 
 def keys_of_class(cls: str) -> list[str]:
     return [
-        k for k, v in schema("medium")["properties"].items() if v["x-coa-class"] == cls
+        k
+        for k, v in schema("medium")["properties"].items()
+        if v["x-copyofa-class"] == cls
     ]
 
 
@@ -52,7 +54,7 @@ def validate(doc: dict[str, Any], kind: str) -> None:
 def tool_info(cfg: Config, build: str | None) -> dict[str, Any]:
     versions = encoding.tool_versions()
     return {
-        "name": "coa",
+        "name": "copyofa",
         "version": __version__,
         "host_os": {
             "name": "macOS",

@@ -1,6 +1,6 @@
 """Re-derivable metadata, consistency checks and issues.
 
-`derive()` is the single function used at archive time, by `coa reprocess` and by
+`derive()` is the single function used at archive time, by `copyofa reprocess` and by
 deep verify: it reads only the raw files (redumper output and session records) and
 the recorded fields, never the work state.
 """
@@ -169,10 +169,10 @@ def derive(
     def add(issue: Issue) -> None:
         issues[issue.code] = issue
 
-    refine_cmd = f"coa refine {holon} {medium} --retries 100 --speed 8"
+    refine_cmd = f"copyofa refine {holon} {medium} --retries 100 --speed 8"
 
     def accept(code: str) -> str:
-        return f"coa accept {holon} {medium} {code} --reason TEXT"
+        return f"copyofa accept {holon} {medium} {code} --reason TEXT"
 
     # --- sources ---
     dump = _stage(stages, "dump", first=True)
@@ -752,8 +752,8 @@ def derive(
                 " drive",
                 [
                     (
-                        f"coa discard {holon} {medium} --yes, then "
-                        f"coa archive {holon} {medium} again"
+                        f"copyofa discard {holon} {medium} --yes, then "
+                        f"copyofa archive {holon} {medium} again"
                     ),
                     accept("leadin-not-verified"),
                 ],
@@ -848,7 +848,7 @@ def derive(
                     f"split (stage {split_stage['nn']:02d}) exited with status"
                     f" {split_stage['exit_code']}",
                     "stage incomplete",
-                    [f"rerun: coa archive {holon} {medium}"],
+                    [f"rerun: copyofa archive {holon} {medium}"],
                     False,
                     {"nn": split_stage["nn"]},
                 )
@@ -863,7 +863,7 @@ def derive(
                     f"{s['name']} (stage {s['nn']:02d}) exited with status"
                     f" {s['exit_code']}",
                     "stage incomplete",
-                    [f"rerun: coa archive {holon} {medium}"],
+                    [f"rerun: copyofa archive {holon} {medium}"],
                     False,
                     {"nn": s["nn"]},
                 )
@@ -876,7 +876,7 @@ def derive(
                 "verification incomplete",
                 "hash did not run after split",
                 "stage incomplete",
-                [f"rerun: coa archive {holon} {medium}"],
+                [f"rerun: copyofa archive {holon} {medium}"],
                 False,
                 {},
             )
@@ -898,7 +898,10 @@ def derive(
                     f"{len(hits)} bad-Q run(s) contain or touch a track/index change",
                     "the position of the change is uncertain",
                     [
-                        f"coa refine {holon} {medium} --retries 30 --refine-subchannel",
+                        (
+                            f"copyofa refine {holon} {medium} --retries 30"
+                            " --refine-subchannel"
+                        ),
                         accept("q-at-index-change"),
                     ],
                     True,
@@ -927,7 +930,10 @@ def derive(
                     "an MCN appears only in Q frames failing their checksum",
                     "the MCN cannot be confirmed from a valid subchannel frame",
                     [
-                        f"coa refine {holon} {medium} --retries 30 --refine-subchannel",
+                        (
+                            f"copyofa refine {holon} {medium} --retries 30"
+                            " --refine-subchannel"
+                        ),
                         accept("mcn-unconfirmed"),
                     ],
                     True,
@@ -960,7 +966,10 @@ def derive(
                     " their checksum",
                     "the ISRC cannot be confirmed from a valid subchannel frame",
                     [
-                        f"coa refine {holon} {medium} --retries 30 --refine-subchannel",
+                        (
+                            f"copyofa refine {holon} {medium} --retries 30"
+                            " --refine-subchannel"
+                        ),
                         accept(code),
                     ],
                     True,
@@ -1063,7 +1072,7 @@ def derive(
                     f"raw files changed during verification:"
                     f" {', '.join(c['values'].get('changed', []))}",
                     "the raw dump must stay as acquired",
-                    [f"coa discard {holon} {medium} --yes and re-dump"],
+                    [f"copyofa discard {holon} {medium} --yes and re-dump"],
                     False,
                     c["values"],
                 )

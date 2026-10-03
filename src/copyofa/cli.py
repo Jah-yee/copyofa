@@ -1,4 +1,4 @@
-"""Command-line interface `coa`."""
+"""Command-line interface `copyofa`."""
 
 import traceback
 from pathlib import Path
@@ -10,7 +10,7 @@ from . import __version__, config
 from .acquisition import acquire
 from .acquisition.workstate import WorkPaths, load_state
 from .archive import product as product_mod
-from .errors import EXIT_ACCEPTED, EXIT_INTERNAL, EXIT_PASS, CoaError
+from .errors import EXIT_ACCEPTED, EXIT_INTERNAL, EXIT_PASS, CopyOfAError
 from .ids import normalize_holon_id, parse_medium_id
 from .issues import ACCEPTED, FAIL, PASS, Issue, open_blocking, render
 
@@ -25,7 +25,7 @@ def _outcome_line(code: int) -> str:
     return f"OUTCOME: {label}"
 
 
-class CoaCommand(click.Command):
+class CopyOfACommand(click.Command):
     """Run the callback (which returns an exit code), report errors, print
     the OUTCOME line when `outcome` is set, and exit with the code."""
 
@@ -36,15 +36,15 @@ class CoaCommand(click.Command):
     def invoke(self, ctx: click.Context) -> NoReturn:
         try:
             code = super().invoke(ctx)
-        except CoaError as exc:
+        except CopyOfAError as exc:
             label = f" [{exc.code}]" if exc.code else ""
-            click.echo(f"coa: {type(exc).__name__}{label}: {exc}", err=True)
+            click.echo(f"copyofa: {type(exc).__name__}{label}: {exc}", err=True)
             code = exc.exit_code
         except KeyboardInterrupt:
-            click.echo("coa: interrupted", err=True)
+            click.echo("copyofa: interrupted", err=True)
             code = 130
         except Exception as exc:  # noqa: BLE001 - internal error
-            click.echo(f"coa: internal error: {exc}", err=True)
+            click.echo(f"copyofa: internal error: {exc}", err=True)
             click.echo(traceback.format_exc(), err=True, nl=False)
             code = EXIT_INTERNAL
         if self.outcome:
@@ -52,13 +52,13 @@ class CoaCommand(click.Command):
         ctx.exit(code)
 
 
-class CoaGroup(click.Group):
-    command_class = CoaCommand
+class CopyOfAGroup(click.Group):
+    command_class = CopyOfACommand
 
 
 @click.group(
-    "coa",
-    cls=CoaGroup,
+    "copyofa",
+    cls=CopyOfAGroup,
     context_settings={"help_option_names": ["-h", "--help"]},
     help="Archive optical discs bit-exactly with redumper",
 )
@@ -66,9 +66,9 @@ class CoaGroup(click.Group):
     "--config",
     "config_path",
     metavar="PATH",
-    help="config file (default $COA_CONFIG or ~/.config/copyofa/config.toml)",
+    help="config file (default $COPYOFA_CONFIG or ~/.config/copyofa/config.toml)",
 )
-@click.version_option(__version__, prog_name="coa", message="%(prog)s %(version)s")
+@click.version_option(__version__, prog_name="copyofa", message="%(prog)s %(version)s")
 @click.pass_context
 def main(ctx: click.Context, config_path: str | None) -> None:
     ctx.obj = config_path
@@ -256,11 +256,13 @@ def status_cmd(config_path: str | None, holon: str | None, medium: str | None) -
             )
         for journal in journals(pd):
             click.echo(
-                f"UNCOMMITTED {journal.relative_to(pd)}: run coa recover {holon}"
+                f"UNCOMMITTED {journal.relative_to(pd)}: run copyofa recover {holon}"
             )
         for path in pd.iterdir():
-            if path.name.startswith((".coa-staging-", ".coa-backup-")):
-                click.echo(f"UNCOMMITTED leftover {path.name}: run coa recover {holon}")
+            if path.name.startswith((".copyofa-staging-", ".copyofa-backup-")):
+                click.echo(
+                    f"UNCOMMITTED leftover {path.name}: run copyofa recover {holon}"
+                )
     else:
         click.echo(f"{holon}: no product manifest")
     media = [str(parse_medium_id(medium))] if medium else None

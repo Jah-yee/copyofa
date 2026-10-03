@@ -190,7 +190,7 @@ def remove_stale_scratch(work_root: Path, holon: str) -> list[str]:
     of a product.
 
     These are only created while holding the product lock, so with the lock held
-    none of them is live. (`coa verify --deep` runs without the lock and uses a
+    none of them is live. (`copyofa verify --deep` runs without the lock and uses a
     different prefix; its dirs are never touched here.)
     """
     import shutil

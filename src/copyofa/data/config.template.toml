@@ -1,4 +1,4 @@
-# coa configuration (recorded in every medium's metadata).
+# copyofa configuration (recorded in every medium's metadata).
 archive_root = $archive_root
 work_root = $work_root
 

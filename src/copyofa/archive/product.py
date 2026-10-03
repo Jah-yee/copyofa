@@ -47,7 +47,7 @@ def _entry(medium_id: str, vocab: vocabulary.Vocabulary) -> dict[str, Any]:
     return {
         "medium_id": medium_id,
         "handled_by": handled,
-        "status": "pending" if handled == "coa" else "handled elsewhere",
+        "status": "pending" if handled == "copyofa" else "handled elsewhere",
     }
 
 
@@ -117,18 +117,18 @@ def medium_dir(product_dir: Path, product: dict[str, Any], medium_id: str) -> Pa
 
 
 def completeness(product: dict[str, Any]) -> tuple[int, int, int]:
-    coa_media = [e for e in product["media"] if e["handled_by"] == "coa"]
+    copyofa_media = [e for e in product["media"] if e["handled_by"] == "copyofa"]
     permanent = sum(
         1
-        for e in coa_media
+        for e in copyofa_media
         if e["status"] == "archived" and e["permanence"] == "permanent"
     )
     provisional = sum(
         1
-        for e in coa_media
+        for e in copyofa_media
         if e["status"] == "archived" and e["permanence"] == "provisional"
     )
-    return permanent, len(coa_media), provisional
+    return permanent, len(copyofa_media), provisional
 
 
 def completeness_line(product: dict[str, Any]) -> str:
@@ -142,7 +142,7 @@ def completeness_line(product: dict[str, Any]) -> str:
 
 
 def amend(cfg: Config, holon_text: str, media_list: str, reason: str) -> int:
-    """`coa amend`: change the media list through an amend transaction."""
+    """`copyofa amend`: change the media list through an amend transaction."""
     from ..acquisition.workstate import product_marker
     from ..ids import normalize_holon_id
     from ..system.macos import FileLock
@@ -155,7 +155,7 @@ def amend(cfg: Config, holon_text: str, media_list: str, reason: str) -> int:
     if not (pd / "product.json").exists():
         raise UsageError(
             f"{holon} has no product manifest yet; declare its media with "
-            "coa archive --media-list"
+            "copyofa archive --media-list"
         )
     with FileLock(pd / "product.lock"):
         recover(pd, cfg.work_root)
@@ -187,7 +187,8 @@ def amend(cfg: Config, holon_text: str, media_list: str, reason: str) -> int:
             marker.parent.mkdir(parents=True, exist_ok=True)
             atomic_write_json(marker, {"verify_required_since": utc_now()})
             click.echo(
-                f"layout changed: run coa verify {holon} before archiving further media"
+                f"layout changed: run copyofa verify {holon} before archiving"
+                " further media"
             )
     click.echo(
         f"media list of {holon}: {', '.join(e['medium_id'] for e in new['media'])}"

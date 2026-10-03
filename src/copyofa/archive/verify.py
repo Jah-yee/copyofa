@@ -1,4 +1,4 @@
-"""`coa verify`: fast and deep verification, PAR2 repair."""
+"""`copyofa verify`: fast and deep verification, PAR2 repair."""
 
 import json
 import re
@@ -50,7 +50,7 @@ def fast_verify(
             Problem(
                 "uncommitted",
                 where,
-                "a publication or reseal journal is present: run coa recover",
+                "a publication or reseal journal is present: run copyofa recover",
             )
         )
     checksum = medium_dir / f"{prefix}.sha256"
@@ -93,9 +93,9 @@ def verify_product(product_dir: Path, *, allow_journal: bool = False) -> list[Pr
     """Product files, layout and manifest-vs-metadata consistency."""
     where = str(product_dir)
     problems: list[Problem] = [
-        Problem("uncommitted", where, f"leftover {path.name}: run coa recover")
+        Problem("uncommitted", where, f"leftover {path.name}: run copyofa recover")
         for path in product_dir.iterdir()
-        if path.name.startswith((".coa-staging-", ".coa-backup-"))
+        if path.name.startswith((".copyofa-staging-", ".copyofa-backup-"))
     ]
     journals = [
         p
@@ -111,7 +111,7 @@ def verify_product(product_dir: Path, *, allow_journal: bool = False) -> list[Pr
             Problem(
                 "uncommitted",
                 where,
-                f"{journal.relative_to(product_dir)}: run coa recover",
+                f"{journal.relative_to(product_dir)}: run copyofa recover",
             )
             for journal in sorted(set(journals))
         )
@@ -128,7 +128,9 @@ def verify_product(product_dir: Path, *, allow_journal: bool = False) -> list[Pr
     medium_prefixes = {f"{holon}-{m}." for m in archived} if flat else set()
     for path in sorted(product_dir.iterdir()):
         name = path.name
-        if name in PRODUCT_FILES or name.startswith((".coa-staging-", ".coa-backup-")):
+        if name in PRODUCT_FILES or name.startswith(
+            (".copyofa-staging-", ".copyofa-backup-")
+        ):
             continue
         if path.is_dir():
             if name not in allowed_dirs:

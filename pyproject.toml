@@ -5,7 +5,7 @@ requires = [ "uv-build>=0.12.19,<0.13" ]
 [project]
 name = "copyofa"
 version = "0.1.0"
-description = "Archive optical discs bit-exactly with redumper"
+description = "Archive optical discs bit-exactly"
 readme = "README.md"
 authors = [ { name = "Jean-Marc Fontaine", email = "jm@jmfontaine.net" } ]
 requires-python = ">=3.14,<3.15"
@@ -20,7 +20,7 @@ dependencies = [
   "pyobjc-framework-cocoa>=12.2.2",
   "pyobjc-framework-diskarbitration>=12.2.2",
 ]
-scripts.coa = "copyofa.cli:main"
+scripts.copyofa = "copyofa.cli:main"
 
 [dependency-groups]
 dev = [
@@ -65,7 +65,7 @@ lint.select = [
   "W",    # pycodestyle warnings
 ]
 lint.ignore = [
-  "N818", # error-suffix-on-exception-name - `coa: <ExceptionName> [code]: ...` prints the class name, so UsageError, EnvironmentFailure etc. are part of the CLI output contract
+  "N818", # error-suffix-on-exception-name - `copyofa: <ExceptionName> [code]: ...` prints the class name, so UsageError, EnvironmentFailure etc. are part of the CLI output contract
 ]
 
 [tool.deptry]
@@ -75,7 +75,7 @@ package_module_name_map.pyobjc-framework-cocoa = [
   "CoreFoundation",
   "Foundation",
   "AppKit",
-  "PyObjCTools"
+  "PyObjCTools",
 ]
 package_module_name_map.pyobjc-framework-diskarbitration = "DiskArbitration"
 
@@ -83,7 +83,7 @@ package_module_name_map.pyobjc-framework-diskarbitration = "DiskArbitration"
 paths = [ "src", "tests" ]
 ignore_names = [
   "appendable",    # MediumStatus field parsed from drutil status, kept with its siblings
-  "command_class", # read by click.Group when CoaGroup creates commands
+  "command_class", # read by click.Group when CopyOfAGroup creates commands
   "description",   # Profile field loaded from the profile TOML files
   "pytestmark",    # read by pytest
 ]
@@ -108,7 +108,7 @@ ignore_missing_imports = true
 ini_options.testpaths = [ "tests" ]
 ini_options.markers = [
   "macos_integration: attaches a temporary disk image",
-  "pilot: reads the dumps in $COA_PILOT_DUMPS (default ~/Dumps); skipped when absent",
+  "pilot: reads the dumps in $COPYOFA_PILOT_DUMPS (default ~/Dumps); skips if absent",
 ]
 
 [tool.coverage]

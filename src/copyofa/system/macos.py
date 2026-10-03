@@ -217,7 +217,7 @@ def _ioreg(cls: str) -> list[dict[str, Any]]:
         return []
     try:
         data = plistlib.loads(out)
-    except Exception:  # noqa: BLE001 - malformed ioreg plist must not crash coa
+    except Exception:  # noqa: BLE001 - malformed ioreg plist must not crash copyofa
         return []
     return data if isinstance(data, list) else [data]
 
@@ -362,7 +362,7 @@ class MountGuard:
         try:
             raw = DiskArbitration.DADiskCopyDescription(disk)
             desc = {str(k): raw[k] for k in raw} if raw is not None else None
-        except Exception:  # noqa: BLE001 - bad disk desc must not crash coa
+        except Exception:  # noqa: BLE001 - bad disk desc must not crash copyofa
             desc = None
         try:
             refuse = desc is None or self.predicate(desc)
@@ -372,9 +372,9 @@ class MountGuard:
             return None
         bsd = (desc or {}).get("DAMediaBSDName") or "an unidentified disk"
         self.refused.append(str(bsd))
-        click.echo(f"coa: refused mount of {bsd}", err=True)
+        click.echo(f"copyofa: refused mount of {bsd}", err=True)
         dissenter = DiskArbitration.DADissenterCreate(
-            None, DiskArbitration.kDAReturnNotPermitted, "coa controls this drive"
+            None, DiskArbitration.kDAReturnNotPermitted, "copyofa controls this drive"
         )
         # DiskArbitration releases the returned dissenter; PyObjC also releases its own
         # reference when the Python wrapper dies, so hand DA an extra retain (without it
@@ -413,7 +413,7 @@ class MountGuard:
 
     def __enter__(self) -> MountGuard:
         self._thread = threading.Thread(
-            target=self._run, name="coa-mount-guard", daemon=True
+            target=self._run, name="copyofa-mount-guard", daemon=True
         )
         self._thread.start()
         if not self._ready.wait(10):
@@ -456,7 +456,7 @@ class FileLock:
         except BlockingIOError:
             os.close(fd)
             raise EnvironmentFailure(
-                f"{self.path} is held by another coa process", code="lock-busy"
+                f"{self.path} is held by another copyofa process", code="lock-busy"
             ) from None
         os.ftruncate(fd, 0)
         os.write(fd, f"{os.getpid()}\n".encode())

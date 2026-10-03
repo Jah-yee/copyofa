@@ -1,4 +1,4 @@
-"""`coa` exit codes, error reporting, OUTCOME line and discard
+"""`copyofa` exit codes, error reporting, OUTCOME line and discard
 confirmation through the Click entry point."""
 
 from pathlib import Path
@@ -22,13 +22,13 @@ def cfg_path(tmp_path: Path) -> Path:
     )[0]
 
 
-def test_coa_error_reports_exit_code_and_outcome(tmp_path: Path) -> None:
+def test_copyofa_error_reports_exit_code_and_outcome(tmp_path: Path) -> None:
     result = CliRunner().invoke(
         main, ["--config", str(tmp_path / "missing.toml"), "archive", H, "CD1"]
     )
     assert result.exit_code == 22
     assert result.stderr.startswith(
-        "coa: EnvironmentFailure [no-config]: no config at "
+        "copyofa: EnvironmentFailure [no-config]: no config at "
     )
     assert result.stdout == "OUTCOME: FAIL\n"
 
@@ -44,7 +44,7 @@ def test_interrupt_exits_130_with_outcome(
         main, ["--config", str(cfg_path), "refine", H, "CD1", "--retries", "1"]
     )
     assert result.exit_code == 130
-    assert result.stderr == "coa: interrupted\n"
+    assert result.stderr == "copyofa: interrupted\n"
     assert result.stdout == "OUTCOME: FAIL\n"
 
 

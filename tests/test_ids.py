@@ -87,7 +87,7 @@ def test_init_writes_config_and_vocabulary(tmp_path: Path) -> None:
 
 def test_work_root_in_private_folder_rejected(tmp_path: Path) -> None:
     with pytest.raises(EnvironmentFailure, match="privacy"):
-        config.check_private_folder(Path.home() / "Documents" / "coa-work")
+        config.check_private_folder(Path.home() / "Documents" / "copyofa-work")
     cfg = tmp_path / "config.toml"
     cfg.write_text('archive_root = "/tmp/a"\n')
     with pytest.raises(EnvironmentFailure, match="work_root"):

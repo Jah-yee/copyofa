@@ -1,4 +1,4 @@
-"""Configuration file (`~/.config/copyofa/config.toml`) and `coa init`."""
+"""Configuration file (`~/.config/copyofa/config.toml`) and `copyofa init`."""
 
 import json
 import os
@@ -73,7 +73,7 @@ class Config:
 def resolve_path(cli_path: str | None) -> Path:
     if cli_path:
         return Path(cli_path).expanduser()
-    env = os.environ.get("COA_CONFIG")
+    env = os.environ.get("COPYOFA_CONFIG")
     if env:
         return Path(env).expanduser()
     return DEFAULT_PATH.expanduser()
@@ -96,7 +96,8 @@ def load(cli_path: str | None = None) -> Config:
     path = resolve_path(cli_path)
     if not path.exists():
         raise EnvironmentFailure(
-            f"no config at {path}: run coa init --archive-root PATH --work-root PATH",
+            f"no config at {path}: run copyofa init --archive-root PATH"
+            " --work-root PATH",
             code="no-config",
         )
     try:
@@ -108,7 +109,7 @@ def load(cli_path: str | None = None) -> Config:
     for key in ("archive_root", "work_root"):
         if not data.get(key):
             raise EnvironmentFailure(
-                f"no config value {key} in {path}: run coa init or add it",
+                f"no config value {key} in {path}: run copyofa init or add it",
                 code="no-config",
             )
     work_root = Path(data["work_root"]).expanduser()

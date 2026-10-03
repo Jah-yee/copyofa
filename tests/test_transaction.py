@@ -35,7 +35,7 @@ def assert_clean(
     leftovers = [
         p.name
         for p in pd.rglob("*")
-        if p.name.endswith(".journal") or p.name.startswith(".coa-")
+        if p.name.endswith(".journal") or p.name.startswith(".copyofa-")
     ]
     assert leftovers == [], label
     if current:
@@ -90,7 +90,7 @@ def test_damaged_staging_rolls_back(tmp_path: Path) -> None:
 
     def hook(current: str) -> None:
         if current == target:
-            staging = next(pd.glob(".coa-staging-*"))
+            staging = next(pd.glob(".copyofa-staging-*"))
             next(staging.glob("*.scram.flac")).write_bytes(b"damaged")
             raise Crash(current)
 
@@ -108,7 +108,7 @@ def test_recover_removes_scratch_of_killed_locked_runs(tmp_path: Path) -> None:
         "reprocess-8W20X-CD1-1",
         "repair-8W20X-CD1-2",
         "staged-8W20X-CD1-3",  # only made under the lock
-        "deep-8W20X-CD1-4",  # coa verify --deep runs unlocked and may be live
+        "deep-8W20X-CD1-4",  # copyofa verify --deep runs unlocked and may be live
         "reprocess-T02PQ-CD1-5",
     ]  # another product
     for name in names:

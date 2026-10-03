@@ -47,7 +47,7 @@ def parse(text: str, path: Path) -> Vocabulary:
         prefixes[name] = Prefix(
             name=name,
             media=tuple(entry.get("media", [])),
-            handled_by=entry.get("handled_by", "coa"),
+            handled_by=entry.get("handled_by", "copyofa"),
             partial=bool(entry.get("partial", False)),
             sides=sides,
             partial_reason=entry.get("partial_reason"),
@@ -58,5 +58,5 @@ def parse(text: str, path: Path) -> Vocabulary:
 def load(archive_root: Path) -> Vocabulary:
     path = archive_root / FILE_NAME
     if not path.exists():
-        raise EnvironmentFailure(f"missing prefix vocabulary {path}: run coa init")
+        raise EnvironmentFailure(f"missing prefix vocabulary {path}: run copyofa init")
     return parse(path.read_text(encoding="utf-8"), path)

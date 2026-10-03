@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 FIXTURES = Path(__file__).parent / "fixtures"
-PILOT_ROOT = Path(os.environ.get("COA_PILOT_DUMPS", str(Path.home() / "Dumps")))
+PILOT_ROOT = Path(os.environ.get("COPYOFA_PILOT_DUMPS", str(Path.home() / "Dumps")))
 
 
 @pytest.fixture

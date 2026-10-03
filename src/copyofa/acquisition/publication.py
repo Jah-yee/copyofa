@@ -1,4 +1,5 @@
-"""Verification run, analysis and publication for `coa archive` and `coa refine`."""
+"""Verification run, analysis and publication for `copyofa archive` and
+`copyofa refine`."""
 
 import shutil
 from pathlib import Path
@@ -139,7 +140,7 @@ def analyse(run: Run) -> dict[str, Any]:
                 f"raw files differ from the snapshot taken after acquisition: "
                 f"{', '.join(changed)}",
                 "the raw dump must stay as acquired",
-                [f"coa discard {run.holon} {run.medium} --yes and re-dump"],
+                [f"copyofa discard {run.holon} {run.medium} --yes and re-dump"],
                 False,
                 {"changed": changed},
             ).as_dict()
@@ -243,7 +244,7 @@ def publish(run: Run, derived: dict[str, Any], result: str) -> int:
             current = [m["medium_id"] for m in existing["media"]]
             if declared and current != declared:
                 amend_action = (
-                    f"coa amend {run.holon} --media-list "
+                    f"copyofa amend {run.holon} --media-list "
                     f"{','.join(declared)} --reason TEXT"
                 )
                 issue = Issue(
@@ -255,7 +256,7 @@ def publish(run: Run, derived: dict[str, Any], result: str) -> int:
                     "the product manifest holds the one declared media list",
                     [
                         amend_action,
-                        f"coa discard {run.holon} {run.medium} --yes",
+                        f"copyofa discard {run.holon} {run.medium} --yes",
                     ],
                     False,
                     {},

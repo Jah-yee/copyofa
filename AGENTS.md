@@ -23,7 +23,7 @@ a change, run `just qa` and `just test`; CI runs the same checks on macOS.
 
 ## Testing
 
-- `pilot` tests read real dumps from `$COA_PILOT_DUMPS` (default `~/Dumps`) and
+- `pilot` tests read real dumps from `$COPYOFA_PILOT_DUMPS` (default `~/Dumps`) and
   skip when they are absent.
 - `macos_integration` tests attach a temporary disk image with `hdiutil`;
   deselect them with `-m "not macos_integration"`.
@@ -38,6 +38,12 @@ documentation and commit messages (`-ize`, `-or`, `-er`, `canceled`, `catalog`).
 Optical media are "discs"; "disk" stays correct for other storage and in macOS
 names such as `diskutil`.
 
+The project is "CopyOfA" in prose (documentation, help text, schema titles) and
+`copyofa` everywhere else: the distribution, the Python package, the command, the
+repository, the `~/.config/copyofa/` directory, `COPYOFA_*` environment
+variables, schema URLs, and the tool name recorded in archive metadata and in
+`handled_by`. Class names use `CopyOfA` (`CopyOfAError`).
+
 ## Conventions
 
 - Lint and format with ruff at a line length of 88. Suppress a finding only with
@@ -45,7 +51,7 @@ names such as `diskutil`.
   with its reason.
 - Strict mypy covers `src` and `tests`. Narrow optional values instead of
   silencing mypy: guard a value that can really be missing with a clear
-  `CoaError`, and `assert` an invariant the code already guarantees.
+  `CopyOfAError`, and `assert` an invariant the code already guarantees.
   `# type: ignore[code]` only at untyped boundaries (PyObjC), with a reason.
 - Declare every third-party module the code imports as a direct dependency;
   `deptry` enforces it. Add dependencies with `uv add`, never by editing

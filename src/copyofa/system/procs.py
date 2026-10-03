@@ -52,7 +52,7 @@ def run_recorded(
             if not chunk:
                 break
             record.write(chunk)
-            # a killed coa still leaves everything read so far in the record
+            # a killed copyofa still leaves everything read so far in the record
             record.flush()
             if echo:
                 click.echo(chunk, nl=False)

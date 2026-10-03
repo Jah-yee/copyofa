@@ -24,8 +24,8 @@ if TYPE_CHECKING:
     from .verify import Problem
 
 JOURNAL_VERSION = 1
-STAGING_PREFIX = ".coa-staging-"
-BACKUP_PREFIX = ".coa-backup-"
+STAGING_PREFIX = ".copyofa-staging-"
+BACKUP_PREFIX = ".copyofa-backup-"
 
 
 def checksum_only_verifier(

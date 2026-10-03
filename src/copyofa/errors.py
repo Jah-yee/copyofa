@@ -11,7 +11,7 @@ EXIT_USAGE = 2
 EXIT_INTERNAL = 70
 
 
-class CoaError(Exception):
+class CopyOfAError(Exception):
     exit_code: int = EXIT_INTERNAL
 
     def __init__(self, message: str, *, code: str | None = None) -> None:
@@ -19,17 +19,17 @@ class CoaError(Exception):
         self.code = code
 
 
-class UsageError(CoaError):
+class UsageError(CopyOfAError):
     exit_code = EXIT_USAGE
 
 
-class MediumRejected(CoaError):
+class MediumRejected(CopyOfAError):
     exit_code = EXIT_REJECTED
 
 
-class EnvironmentFailure(CoaError):
+class EnvironmentFailure(CopyOfAError):
     exit_code = EXIT_ENVIRONMENT
 
 
-class IntegrityFailure(CoaError):
+class IntegrityFailure(CopyOfAError):
     exit_code = EXIT_INTEGRITY

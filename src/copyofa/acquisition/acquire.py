@@ -1,5 +1,6 @@
-"""`coa archive`, `coa refine`, `coa accept`, `coa discard`, `coa drive-test`:
-identification, safety checks, staged and resumable acquisition."""
+"""`copyofa archive`, `copyofa refine`, `copyofa accept`, `copyofa discard`,
+`copyofa drive-test`: identification, safety checks, staged and resumable
+acquisition."""
 
 import contextlib
 import json
@@ -80,7 +81,7 @@ def stage_failed_issue(
 ) -> Issue:
     reason = "was interrupted" if interrupted else f"exited with status {exit_code}"
     action = (
-        f"rerun: coa archive {holon} {medium} (repeats the stage; keep the disc "
+        f"rerun: copyofa archive {holon} {medium} (repeats the stage; keep the disc "
         f"in the drive)"
     )
     return Issue(
@@ -104,11 +105,11 @@ def stage_failed_issue(
 def catalog_issue(item: Classified, holon: str, medium: str) -> Issue:
     actions = [item.action] if item.action else []
     if item.acceptable:
-        actions.append(f"coa accept {holon} {medium} {item.code} --reason TEXT")
+        actions.append(f"copyofa accept {holon} {medium} {item.code} --reason TEXT")
     else:
         actions.append(
-            f"fix the drive or environment, then coa discard {holon} {medium} --yes "
-            f"and archive again"
+            f"fix the drive or environment, then copyofa discard {holon} {medium} "
+            f"--yes and archive again"
         )
     return Issue(
         code=item.code,
@@ -134,7 +135,7 @@ def open_run(cfg: Config, holon_text: str, medium_text: str) -> Run:
         raise UsageError(
             f"unknown medium prefix {medium.prefix!r} (vocabulary {vocab.path})"
         )
-    if prefix.handled_by != "coa":
+    if prefix.handled_by != "copyofa":
         raise MediumRejected(
             f"{medium} is handled elsewhere ({prefix.handled_by})",
             code="handled-elsewhere",
@@ -149,7 +150,7 @@ def check_product(run: Run, media_list: str | None) -> None:
     """The medium must be on the product's media list and not archived yet."""
     if product_marker(run.cfg.work_root, run.holon).exists():
         raise EnvironmentFailure(
-            f"the layout of {run.holon} changed in an amendment: run coa verify "
+            f"the layout of {run.holon} changed in an amendment: run copyofa verify "
             f"{run.holon} first",
             code="verify-required",
         )
@@ -164,7 +165,7 @@ def check_product(run: Run, media_list: str | None) -> None:
         if entry is None:
             raise MediumRejected(
                 f"{run.medium} is not in the media list of {run.holon}: "
-                f"{', '.join(m['medium_id'] for m in doc['media'])}; use coa amend",
+                f"{', '.join(m['medium_id'] for m in doc['media'])}; use copyofa amend",
                 code="not-in-media-list",
             )
         if entry["status"] == "archived":
@@ -173,7 +174,7 @@ def check_product(run: Run, media_list: str | None) -> None:
             )
         if media_list:
             raise UsageError(
-                f"media list already declared for {run.holon}; use coa amend"
+                f"media list already declared for {run.holon}; use copyofa amend"
             )
         return
     declared = run.state.get("declared_media_list")
@@ -343,7 +344,7 @@ def cached_drive_test(
         raise EnvironmentFailure(
             "no drive::test result for this drive, firmware, connection and "
             "redumper build: insert a known error-free mixed-mode CD and run: "
-            f"coa drive-test --drive {selected.drive.name}",
+            f"copyofa drive-test --drive {selected.drive.name}",
             code="drive-test-missing",
         )
     result: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
@@ -353,7 +354,7 @@ def cached_drive_test(
         raise EnvironmentFailure(
             f"cached drive::test failed (exit {result.get('exit_code')}, "
             f"PLEXTOR lead-in: {result.get('plextor_leadin')}); rerun "
-            f"coa drive-test --drive {selected.drive.name}",
+            f"copyofa drive-test --drive {selected.drive.name}",
             code="drive-test-failed",
         )
     return result, directory / f"{key}.console"
@@ -439,8 +440,8 @@ def pre_dump_issue(
         what=what,
         why=why,
         actions=[
-            f"coa accept {holon} {medium} {code} --reason TEXT",
-            f"coa discard {holon} {medium} --yes",
+            f"copyofa accept {holon} {medium} {code} --reason TEXT",
+            f"copyofa discard {holon} {medium} --yes",
         ],
         acceptable=True,
         values=values or {},
@@ -496,7 +497,7 @@ def first_identification(
         issues.append(
             pre_dump_issue(
                 "premounted-read-write",
-                f"the medium was mounted read-write before coa took control: "
+                f"the medium was mounted read-write before copyofa took control: "
                 f"{mounts_text}",
                 "macOS may already have written to the medium",
                 holon,
@@ -1139,7 +1140,7 @@ def refine(
         state = run.state
         if not state.get("acquisition_complete"):
             raise UsageError(
-                f"acquisition of {run.image} is not complete: run coa archive "
+                f"acquisition of {run.image} is not complete: run copyofa archive "
                 f"{run.holon} {run.medium}"
             )
         if state["phase"] in ("publishing", "published"):
@@ -1211,7 +1212,7 @@ def accept(
             state["verification_needed"] = True
         save_state(run.paths, state)
         click.echo(f"accepted {code} for {run.image}")
-        click.echo(f"rerun: coa archive {run.holon} {run.medium}")
+        click.echo(f"rerun: copyofa archive {run.holon} {run.medium}")
         return 0
 
 
@@ -1223,7 +1224,7 @@ def discard(cfg: Config, holon_text: str, medium_text: str, *, yes: bool) -> int
         _lock_work(run)
         if run.state.get("phase") == "publishing":
             raise UsageError(
-                f"{run.image} is being published: run coa recover {run.holon} first"
+                f"{run.image} is being published: run copyofa recover {run.holon} first"
             )
         if not yes:
             if sys.stdin is None or not sys.stdin.isatty():

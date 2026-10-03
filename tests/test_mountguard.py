@@ -25,7 +25,7 @@ def test_mount_refused_while_guard_active(tmp_path: Path) -> None:
         "-layout",
         "NONE",
         "-volname",
-        "COATEST",
+        "COPYOFATEST",
         str(image),
     )
     if created.returncode:

@@ -85,7 +85,7 @@ def metadata(
         "created_at": TS,
         "outcome": "PASS WITH ACCEPTED ISSUES",
         "tool": {
-            "name": "coa",
+            "name": "copyofa",
             "version": "0.1.0",
             "host_os": {"name": "macOS", "version": "15", "machine": "arm64"},
             "python": "3.14",

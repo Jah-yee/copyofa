@@ -1,4 +1,5 @@
-"""`coa reprocess`: re-derive the metadata from the archived raw files and reseal."""
+"""`copyofa reprocess`: re-derive the metadata from the archived raw files and
+reseal."""
 
 import copy
 import json
@@ -51,7 +52,7 @@ def reprocess(
         if problems:
             raise IntegrityFailure(
                 f"{holon} {medium} is damaged ({'; '.join(map(str, problems))}): "
-                f"run coa verify {holon} {medium} --repair"
+                f"run copyofa verify {holon} {medium} --repair"
             )
         old = medium_doc(mdir, holon, medium)
         image = f"{holon}-{medium}"
