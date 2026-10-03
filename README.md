@@ -112,3 +112,7 @@ The archive tests need `flac`, `jq`, `par2`, `xz` and `zstd`. CI (`.github/workf
 and the suite on macOS with Python 3.14, both with the locked dependencies and with the oldest versions
 `pyproject.toml` allows. `copyofa` supports Python 3.14 only; `requires-python` refuses other interpreters.
 Conventions for contributors and coding agents are in [AGENTS.md](AGENTS.md).
+
+## License
+
+CopyOfA is licensed under the [Apache License 2.0](LICENSE.txt).

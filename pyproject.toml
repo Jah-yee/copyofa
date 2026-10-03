@@ -7,6 +7,8 @@ name = "copyofa"
 version = "0.1.0"
 description = "Archive optical discs bit-exactly"
 readme = "README.md"
+license = "Apache-2.0"
+license-files = [ "LICENSE.txt" ]
 authors = [ { name = "Jean-Marc Fontaine", email = "jm@jmfontaine.net" } ]
 requires-python = ">=3.14,<3.15"
 classifiers = [
