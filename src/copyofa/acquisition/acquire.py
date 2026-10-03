@@ -20,7 +20,12 @@ from ..errors import EXIT_FAIL, EnvironmentFailure, MediumRejected, UsageError
 from ..ids import MediumId, normalize_holon_id, parse_medium_id, validate_media_list
 from ..issues import Issue, open_blocking, render
 from ..redumper import console, rawdata
-from ..redumper.commands import build_argv, redumper_build
+from ..redumper.commands import (
+    build_argv,
+    leadin_expected,
+    parse_build,
+    redumper_build,
+)
 from ..redumper.messages import Catalog, Classified
 from ..system import macos
 from ..system.procs import StageRun, run_recorded
@@ -200,8 +205,8 @@ def check_product(run: Run, media_list: str | None) -> None:
 
 
 def environment_preflight(cfg: Config) -> tuple[str, str]:
-    """Checks run on every invocation: tools, redumper allow-list, work root rules,
-    free space."""
+    """Checks run on every invocation: tools, minimum redumper build, work root
+    rules, free space."""
     redumper = shutil.which(cfg.redumper_path)
     missing = [t for t in REQUIRED_TOOLS if not shutil.which(t)]
     if redumper is None:
@@ -212,11 +217,12 @@ def environment_preflight(cfg: Config) -> tuple[str, str]:
         )
     assert redumper is not None  # missing-tool above raises when shutil.which failed
     build = redumper_build(redumper)
-    if build is None or build not in cfg.allowed_builds:
+    parsed = parse_build(build) if build else None
+    if build is None or parsed is None or parsed.number < cfg.min_build:
         raise EnvironmentFailure(
-            f"redumper build {build!r} is not on the allow-list "
-            f"{list(cfg.allowed_builds)}",
-            code="redumper-not-allowed",
+            f"redumper build {build!r} is not supported: the configuration needs "
+            f"build b{cfg.min_build} or later",
+            code="redumper-unsupported",
         )
     config_mod.check_private_folder(cfg.work_root)
     cfg.work_root.mkdir(parents=True, exist_ok=True)
@@ -256,7 +262,10 @@ def _interconnect(xml: bytes, product: str) -> str | None:
 def select_drive(cfg: Config, drive_name: str | None, wait: float) -> Selected:
     drives = [cfg.drive(drive_name)] if drive_name else list(cfg.drives)
     if not drives:
-        raise EnvironmentFailure("no drives configured", code="no-drive")
+        raise EnvironmentFailure(
+            f"no drives configured: add a [[drives]] entry to {cfg.path}",
+            code="no-drive",
+        )
     deadline = time.monotonic() + max(0.0, wait)
     announced = False
     while True:
@@ -300,24 +309,29 @@ def select_drive(cfg: Config, drive_name: str | None, wait: float) -> Selected:
 def check_known_bad(cfg: Config, location: macos.DriveLocation, build: str) -> None:
     if location.bridge is None:
         return
+    parsed = parse_build(build)
+    assert parsed is not None  # environment_preflight refuses unparsable builds
     for entry in cfg.known_bad:
-        if (
-            entry.bridge.upper() == location.bridge.key.upper()
-            and build in entry.builds
-        ):
-            raise EnvironmentFailure(
-                f"known-bad combination: bridge {location.bridge.key} with "
-                f"redumper {build}: {entry.reason}",
-                code="known-bad-combination",
-            )
+        if entry.bridge.upper() != location.bridge.key.upper():
+            continue
+        if entry.fixed_in is not None and parsed.number >= entry.fixed_in:
+            continue
+        if parsed.patches & set(entry.fixed_by):
+            continue
+        raise EnvironmentFailure(
+            f"known-bad combination: bridge {location.bridge.key} with "
+            f"redumper {build}: {entry.reason}",
+            code="known-bad-combination",
+        )
 
 
 def check_firmware(selected: Selected) -> None:
-    if selected.location.firmware != selected.drive.firmware:
+    expected = selected.drive.firmware
+    if expected is not None and selected.location.firmware != expected:
         raise EnvironmentFailure(
             f"drive {selected.drive.name} reports firmware "
             f"{selected.location.firmware}, configured "
-            f"{selected.drive.firmware}; verify the drive and update the configuration",
+            f"{expected}; verify the drive and update the configuration",
             code="firmware-mismatch",
         )
 
@@ -349,7 +363,8 @@ def cached_drive_test(
         )
     result: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
     if result.get("exit_code") != 0 or (
-        selected.location.vendor == "PLEXTOR" and result.get("plextor_leadin") != "yes"
+        leadin_expected(selected.location.vendor)
+        and result.get("plextor_leadin") != "yes"
     ):
         raise EnvironmentFailure(
             f"cached drive::test failed (exit {result.get('exit_code')}, "
@@ -573,14 +588,20 @@ def first_identification(
                 "drive": drive_text,
             }
         )
+    if leadin_expected(location.vendor):
+        missing_leadins = range(2, descriptor.sessions + 1)
+        leadin_cause = "redumper's PLEXTOR lead-in reader stops after session 1"
+    else:
+        missing_leadins = range(1, descriptor.sessions + 1)
+        leadin_cause = "redumper reads the lead-in only on PLEXTOR drives"
     gaps.extend(
         {
             "description": f"session {session} lead-in not captured",
-            "cause": "redumper b753 PLEXTOR lead-in reader stops after session 1",
+            "cause": leadin_cause,
             "tool": tool,
             "drive": drive_text,
         }
-        for session in range(2, descriptor.sessions + 1)
+        for session in missing_leadins
     )
     console_record = paths.preflight("drive-test.console")
     shutil.copyfile(drive_test_console, console_record)

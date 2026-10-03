@@ -80,3 +80,19 @@ def test_jj314_split_refused(tmp_path: Path) -> None:
         "JJ314", "CD1", raw, replay.recorded(stages, accepted), Catalog.load()
     )
     assert next(i for i in again["issues"] if i["code"] == "split-refused")["accepted"]
+
+
+@pytest.mark.parametrize(("vendor", "blocks"), [("PLEXTOR", True), ("ASUS", False)])
+def test_missing_leadin_blocks_only_on_plextor(
+    tmp_path: Path, vendor: str, blocks: bool
+) -> None:
+    raw, stages = replay.build(pilot_dir("8W20X"), "8W20X", "8W20X-CD1", tmp_path)
+    stages = [s for s in stages if s["name"] != "dump::extra"]
+    for name in raw:
+        if name.endswith(".console"):
+            path = tmp_path / name
+            text = path.read_text()
+            path.write_text(text.replace("inquiry: PLEXTOR -", f"inquiry: {vendor} -"))
+    derived = derive("8W20X", "CD1", raw, replay.recorded(stages), Catalog.load())
+    codes = {i["code"] for i in derived["issues"]}
+    assert ("leadin-not-verified" in codes) == blocks

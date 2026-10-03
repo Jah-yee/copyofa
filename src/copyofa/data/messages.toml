@@ -1,4 +1,4 @@
-# Classification of redumper b753 console/log lines.
+# Classification of redumper console/log lines, cataloged from build b753.
 # pattern: Python regex; matched with re.fullmatch on a cleaned line unless match = "contains" (re.search).
 # class: blocking | warning | info. acceptable: whether `copyofa accept` may accept a blocking entry.
 # A user catalog (<config dir>/messages.toml, same format) is consulted first; the first match wins.

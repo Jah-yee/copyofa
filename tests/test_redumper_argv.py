@@ -5,7 +5,14 @@ from pathlib import Path
 
 import pytest
 
-from copyofa.redumper.commands import build_argv, redumper_build
+from copyofa.redumper.commands import (
+    MIN_BUILD,
+    Build,
+    build_argv,
+    leadin_expected,
+    parse_build,
+    redumper_build,
+)
 from copyofa.system.procs import run_recorded
 
 
@@ -179,6 +186,26 @@ def test_run_recorded_forwards_interrupt(tmp_path: Path) -> None:
     assert b"child got SIGINT" in record.read_bytes()
 
 
+def test_parse_build() -> None:
+    assert parse_build("b753") == Build(753, frozenset())
+    assert parse_build("b756+d8fix") == Build(756, frozenset({"d8fix"}))
+    assert parse_build("b756+a+b") == Build(756, frozenset({"a", "b"}))
+    for bad in ("753", "b", "bX", "b756+", "b756 ", "v756"):
+        assert parse_build(bad) is None, bad
+
+
+def test_missing_leadin_waived_only_for_known_other_vendors() -> None:
+    assert leadin_expected("PLEXTOR")
+    assert leadin_expected("PLEXTOR ")
+    assert leadin_expected(None)
+    assert leadin_expected("")
+    assert not leadin_expected("ASUS")
+
+
 @pytest.mark.skipif(not shutil.which("redumper"), reason="redumper not installed")
-def test_redumper_build() -> None:
-    assert redumper_build("redumper") == "b753+d8fix"
+def test_installed_redumper_is_supported() -> None:
+    build = redumper_build("redumper")
+    assert build is not None
+    parsed = parse_build(build)
+    assert parsed is not None, build
+    assert parsed.number >= MIN_BUILD

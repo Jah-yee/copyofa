@@ -12,6 +12,7 @@ from typing import Any
 from ..errors import IntegrityFailure
 from ..issues import Issue
 from ..redumper import console, rawdata
+from ..redumper.commands import leadin_expected
 from ..redumper.messages import Catalog
 from ..system import macos
 from ..util import parse_utc, sha256_file
@@ -736,7 +737,10 @@ def derive(
                 {"samples": counts.c2_samples, "tracks": per_track},
             )
         )
-    if not (leadin and leadin.stored and leadin.stored[2]):
+    # On a known non-PLEXTOR drive redumper cannot read the lead-in; acquisition
+    # records the gap instead.
+    leadin_drive = leadin_expected(dinfo.vendor if dinfo else None)
+    if leadin_drive and not (leadin and leadin.stored and leadin.stored[2]):
         add(
             Issue(
                 "leadin-not-verified",
@@ -761,14 +765,14 @@ def derive(
                 {"attempts": leadin.attempts if leadin else 0},
             )
         )
-    for number in toc.sessions if toc else []:
+    for number in toc.sessions if leadin_drive and toc else []:
         if number >= 2:
             add(
                 Issue(
                     f"leadin-missing-session-{number}",
                     "blocking",
                     f"session {number} lead-in not captured",
-                    f"redumper b753 does not capture the lead-in of session {number}",
+                    f"redumper does not capture the lead-in of session {number}",
                     "every session's lead-in is part of the medium",
                     [accept(f"leadin-missing-session-{number}")],
                     True,

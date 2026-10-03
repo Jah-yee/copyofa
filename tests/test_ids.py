@@ -78,8 +78,6 @@ def test_init_writes_config_and_vocabulary(tmp_path: Path) -> None:
     config.init(cfg_path, tmp_path / "archive", tmp_path / "work")
     cfg = config.load(str(cfg_path))
     assert cfg.archive_root == (tmp_path / "archive").resolve()
-    assert cfg.allowed_builds == ("b753+d8fix",)
-    assert cfg.drives[0].product == "CD-R   PX-W5224A"
     assert vocabulary.load(cfg.archive_root).prefixes["SACD"].partial
     with pytest.raises(UsageError, match="already exists"):
         config.init(cfg_path, tmp_path / "archive", tmp_path / "work")

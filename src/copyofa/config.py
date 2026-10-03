@@ -11,6 +11,7 @@ from typing import Any
 
 from . import vocabulary
 from .errors import EnvironmentFailure, UsageError
+from .redumper.commands import MIN_BUILD
 
 DEFAULT_PATH = Path("~/.config/copyofa/config.toml")
 PRIVATE_FOLDERS = ("Desktop", "Documents", "Downloads")
@@ -21,14 +22,15 @@ class DriveConfig:
     name: str
     vendor: str
     product: str
-    firmware: str
+    firmware: str | None  # None accepts any firmware
     media: tuple[str, ...]
 
 
 @dataclass(frozen=True)
 class KnownBad:
     bridge: str
-    builds: tuple[str, ...]
+    fixed_by: tuple[str, ...]  # build patch suffixes that fix it
+    fixed_in: int | None  # first upstream build that fixes it
     reason: str
 
 
@@ -38,7 +40,7 @@ class Config:
     archive_root: Path
     work_root: Path
     redumper_path: str
-    allowed_builds: tuple[str, ...]
+    min_build: int
     drives: tuple[DriveConfig, ...]
     known_bad: tuple[KnownBad, ...]
     approved_profiles: tuple[str, ...]
@@ -115,6 +117,13 @@ def load(cli_path: str | None = None) -> Config:
     work_root = Path(data["work_root"]).expanduser()
     check_private_folder(work_root)
     red = data.get("redumper", {})
+    min_build = int(red.get("min_build", MIN_BUILD))
+    if min_build < MIN_BUILD:
+        raise EnvironmentFailure(
+            f"{path}: [redumper] min_build = {min_build} is below b{MIN_BUILD}, the "
+            f"oldest build copyofa supports",
+            code="bad-config",
+        )
     redundancy = data.get("redundancy", {})
     space = data.get("space", {})
     try:
@@ -123,7 +132,7 @@ def load(cli_path: str | None = None) -> Config:
                 name=d["name"],
                 vendor=d["vendor"],
                 product=d["product"],
-                firmware=d["firmware"],
+                firmware=d.get("firmware"),
                 media=tuple(d.get("media", [])),
             )
             for d in data.get("drives", [])
@@ -131,7 +140,8 @@ def load(cli_path: str | None = None) -> Config:
         known_bad = tuple(
             KnownBad(
                 bridge=k["bridge"],
-                builds=tuple(k.get("builds", [])),
+                fixed_by=tuple(k.get("fixed_by", [])),
+                fixed_in=int(k["fixed_in"]) if "fixed_in" in k else None,
                 reason=k.get("reason", ""),
             )
             for k in data.get("known_bad", [])
@@ -145,7 +155,7 @@ def load(cli_path: str | None = None) -> Config:
         archive_root=Path(data["archive_root"]).expanduser(),
         work_root=work_root,
         redumper_path=red.get("path", "redumper"),
-        allowed_builds=tuple(red.get("allowed_builds", [])),
+        min_build=min_build,
         drives=drives,
         known_bad=known_bad,
         approved_profiles=tuple(data.get("profiles", {}).get("approved", [])),

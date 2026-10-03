@@ -4,19 +4,23 @@ work_root = $work_root
 
 [redumper]
 path = "redumper"                      # resolved with PATH lookup
-allowed_builds = ["b753+d8fix"]        # only audited redumper builds
+min_build = 753                        # oldest redumper build to run; 753 is the lowest accepted
 
-[[drives]]
-name = "plextor"
-vendor = "PLEXTOR"
-product = "CD-R   PX-W5224A"           # exact SCSI Product Identification (drutil -drive argument)
-firmware = "1.04"
-media = ["CD"]                         # families this drive is verified for
+# One [[drives]] entry per drive copyofa may use. With the drive attached,
+#   ioreg -r -c IOSCSILogicalUnitNub -l | grep -E 'Identification|Revision Level'
+# prints its exact vendor, product and firmware; product must match exactly, spaces included.
+# [[drives]]
+# name = "plextor"
+# vendor = "PLEXTOR"
+# product = "CD-R   PX-W5224A"         # exact SCSI Product Identification (drutil -drive argument)
+# firmware = "1.04"                    # optional: refuse the drive when it reports another firmware
+# media = ["CD"]                       # families this drive is verified for
 
 [[known_bad]]                          # drive bridge / redumper build combinations that corrupt reads
 bridge = "0x152D:0x2338"
-builds = ["b751", "b752", "b753"]
-reason = "JMicron bridge pads READ CDDA transfers: HOST: SHORT TRANSFER on PLEXTOR lead-in reads without +d8fix"
+fixed_by = ["d8fix"]                   # build patch suffixes that fix it (b756+d8fix)
+# fixed_in = NNN                       # first upstream redumper build that fixes it, once released
+reason = "JMicron bridge pads READ CDDA transfers: HOST: SHORT TRANSFER on PLEXTOR lead-in reads"
 
 [profiles]
 approved = []                          # e.g. ["cd-audio-pressed@0.1"] once the owner approves it

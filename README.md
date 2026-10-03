@@ -10,8 +10,9 @@ and publishes a self-describing, checksummed archive that standard tools (`shasu
 ## Requirements
 
 - macOS, Python 3.14, [uv](https://docs.astral.sh/uv/)
-- redumper build `b753+d8fix` (the only allow-listed build), `flac`, `xz`, `zstd`, `par2` on `PATH`
-- a configured drive (default: PLEXTOR PX-W5224A, firmware 1.04)
+- redumper build b753 or later, `flac`, `xz`, `zstd`, `par2` on `PATH`
+- an optical drive configured in `[[drives]]` (see Setup). redumper reads the lead-in only on PLEXTOR drives; on
+  other drives `copyofa` records the missing lead-in as a gap in the medium's metadata
 
 ## Setup
 
@@ -24,6 +25,31 @@ uv run copyofa init --archive-root /Volumes/Archive/discs --work-root /Volumes/W
 medium-prefix vocabulary `<archive_root>/media-prefixes.toml`. The work root must not be inside `~/Desktop`,
 `~/Documents` or `~/Downloads`. Approve an acquisition profile by adding it to `[profiles] approved`; until then
 every archive is provisional.
+
+Add a `[[drives]]` entry for each drive `copyofa` may use. With the drive attached,
+`ioreg -r -c IOSCSILogicalUnitNub -l | grep -E 'Identification|Revision Level'` prints its exact vendor, product
+and firmware; the product must match exactly, spaces included:
+
+```toml
+[[drives]]
+name = "plextor"
+vendor = "PLEXTOR"
+product = "CD-R   PX-W5224A"
+firmware = "1.04"   # optional: refuse the drive when it reports another firmware
+media = ["CD"]      # media families this drive is verified for
+```
+
+Then cache the drive's `redumper drive::test` result:
+
+```bash
+uv run copyofa drive-test          # with a known error-free mixed-mode CD inserted
+```
+
+`[redumper] min_build` sets the oldest redumper build `copyofa` runs (753 at the lowest). `[[known_bad]]` entries
+refuse drive bridge / redumper build combinations that corrupt reads, unless the build is at least `fixed_in` or
+carries a patch listed in `fixed_by` (the `+d8fix` of `b756+d8fix`). The shipped entry refuses the JMicron
+`0x152D:0x2338` USB bridge for every drive: it corrupts PLEXTOR lead-in reads, confirmed with one PLEXTOR drive;
+other drives through that bridge are untested.
 
 ## Archiving a disc
 
