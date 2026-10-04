@@ -126,6 +126,31 @@ def load(cli_path: str | None = None) -> Config:
         )
     redundancy = data.get("redundancy", {})
     space = data.get("space", {})
+    # Validate redundancy.space int/float conversions
+    try:
+        redundancy_percent = int(redundancy.get("percent", 10))
+    except (ValueError, TypeError) as exc:
+        raise EnvironmentFailure(
+            f"{path}: [redundancy] percent must be an integer: {exc}",
+            code="bad-config",
+        ) from exc
+    try:
+        q_rate_threshold = float(redundancy.get("q_rate_threshold", 0.005))
+    except (ValueError, TypeError) as exc:
+        raise EnvironmentFailure(
+            f"{path}: [redundancy] q_rate_threshold must be a number: {exc}",
+            code="bad-config",
+        ) from exc
+
+    def _as_tuple(value: Any, field: str) -> tuple:
+        """Coerce a config field to tuple; string is a usage error, not a char list."""
+        if isinstance(value, str):
+            raise EnvironmentFailure(
+                f"{path}: [{field}] must be a list of strings, not a bare string",
+                code="bad-config",
+            )
+        return tuple(value) if value else ()
+
     try:
         drives = tuple(
             DriveConfig(
@@ -133,14 +158,14 @@ def load(cli_path: str | None = None) -> Config:
                 vendor=d["vendor"],
                 product=d["product"],
                 firmware=d.get("firmware"),
-                media=tuple(d.get("media", [])),
+                media=_as_tuple(d.get("media"), f"drives.{d['name']}.media"),
             )
             for d in data.get("drives", [])
         )
         known_bad = tuple(
             KnownBad(
                 bridge=k["bridge"],
-                fixed_by=tuple(k.get("fixed_by", [])),
+                fixed_by=_as_tuple(k.get("fixed_by"), "known_bad.fixed_by"),
                 fixed_in=int(k["fixed_in"]) if "fixed_in" in k else None,
                 reason=k.get("reason", ""),
             )
@@ -150,6 +175,10 @@ def load(cli_path: str | None = None) -> Config:
         raise EnvironmentFailure(
             f"{path}: missing key {exc} in a [[drives]] or [[known_bad]] entry"
         ) from exc
+
+    approved_profiles = _as_tuple(
+        data.get("profiles", {}).get("approved"), "profiles.approved"
+    )
     return Config(
         path=path,
         archive_root=Path(data["archive_root"]).expanduser(),
